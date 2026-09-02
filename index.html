@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WeBringo — Topic Tally</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎪</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Work+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -588,7 +589,7 @@
 
   async function createGroup(name){
     const code = genCode(5);
-    const group = { code, name: normTopic(name).slice(0,40) || 'Our Group', createdAt: Date.now(), sessionIds: [] };
+    const group = { code, name: normTopic(name).slice(0,40) || 'Our Group', createdAt: Date.now(), sessionIds: [], members: [{id: state.identity.id, name: state.identity.name}] };
     const ok = await sSet('group:'+code, group, true);
     if(!ok) return false;
     state.groupCode = code;
@@ -597,6 +598,16 @@
     updateUrl();
     render();
     return true;
+  }
+
+  async function ensureGroupMember(group){
+    if(!group.members) group.members = [];
+    const exists = group.members.some(m=>m.id === state.identity.id);
+    if(!exists){
+      group.members.push({id: state.identity.id, name: state.identity.name});
+      await sSet('group:'+group.code, group, true);
+    }
+    return group;
   }
 
   async function joinGroup(code){
@@ -610,7 +621,7 @@
     const group = await sGet('group:'+code, true);
     if(!group){ toast("Can't find a group with that code"); return; }
     state.groupCode = code;
-    state.group = group;
+    state.group = await ensureGroupMember(group);
     state.view = 'groupHome';
     updateUrl();
     render();
@@ -625,6 +636,9 @@
   async function createSession(name){
     if(!state.group) return false;
     const id = genCode(6) + '-' + Math.floor(Math.random()*900+100);
+    const members = (state.group.members && state.group.members.length)
+      ? state.group.members.map(m=>({id: m.id, name: m.name}))
+      : [{id: state.identity.id, name: state.identity.name}];
     const session = {
       id,
       groupCode: state.groupCode,
@@ -634,7 +648,7 @@
       createdAt: Date.now(),
       topics: [],
       counts: {},
-      participants: [{id: state.identity.id, name: state.identity.name}],
+      participants: members,
       gridSize: null,
       pool: null,
     };
@@ -682,8 +696,8 @@
   }
 
   function pickGridSize(count){
-    if(count >= 24) return 5;
-    if(count >= 8) return 3;
+    if(count >= 25) return 5;
+    if(count >= 9) return 3;
     return 0;
   }
 
@@ -691,7 +705,7 @@
     const fresh = await refreshSession() || state.session;
     const n = pickGridSize(fresh.topics.length);
     if(!n){ toast('Need at least 8 guesses to start'); render(); return; }
-    const needed = n*n - 1;
+    const needed = n*n;
     const pool = seededShuffle(fresh.topics, fresh.id).slice(0, needed).map(t=>t.id);
     fresh.gridSize = n;
     fresh.pool = pool;
@@ -721,7 +735,9 @@
     fresh.phase = 'ended';
     fresh.endedAt = Date.now();
     await sSet('session:'+fresh.id, fresh, true);
-    goHome();
+    state.session = fresh;
+    state.view = 'results';
+    render();
   }
 
   /* ===================== Test-mode helpers ===================== */
@@ -836,7 +852,7 @@
       const group = await sGet('group:'+g, true);
       if(group){
         state.groupCode = g;
-        state.group = group;
+        state.group = (state.identity && state.identity.name) ? await ensureGroupMember(group) : group;
         state.view = 'groupHome';
         if(s){
           const session = await sGet('session:'+s, true);
@@ -865,30 +881,21 @@
           if(JSON.stringify(s) !== before) softRender();
         }
       } else if(state.view === 'groupHome'){
+        const beforeCount = (state.group && state.group.sessionIds) ? state.group.sessionIds.length : 0;
         await refreshGroup();
-        softRender();
+        const afterIds = (state.group && state.group.sessionIds) || [];
+        if(afterIds.length > beforeCount){
+          const newestId = afterIds[afterIds.length - 1];
+          toast("🎪 You're being pulled into the new session…");
+          await openSession(newestId);
+        } else {
+          softRender();
+        }
       }
     }, 4000);
   }
 
   // Re-render but keep focus/value of an actively-typed input
-  function softRender(){
-    const active = document.activeElement;
-    let savedId = null, savedVal = null, savedSel = null;
-    if(active && active.tagName === 'INPUT' && active.id){
-      savedId = active.id; savedVal = active.value; savedSel = active.selectionStart;
-    }
-    render();
-    if(savedId){
-      const el = document.getElementById(savedId);
-      if(el){
-        el.value = savedVal;
-        el.focus();
-        try{ el.setSelectionRange(savedSel, savedSel); }catch(e){}
-      }
-    }
-  }
-
   /* ===================== Rendering ===================== */
   const app = document.getElementById('app');
 
@@ -982,6 +989,11 @@
   }
 
   function render(){
+    const active = document.activeElement;
+    let savedId = null, savedVal = null, savedSel = null;
+    if(active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA') && active.id){
+      savedId = active.id; savedVal = active.value; savedSel = active.selectionStart;
+    }
     let html = '';
     if(state.view === 'home') html = viewHome();
     else if(state.view === 'groupHome') html = viewGroupHome();
@@ -997,7 +1009,17 @@
     if(state.toastMsg) html += `<div class="toast">${esc(state.toastMsg)}</div>`;
     app.innerHTML = html;
     if(state.view === 'groupHome') hydrateSessionList();
+    if(savedId){
+      const el = document.getElementById(savedId);
+      if(el){
+        el.value = savedVal;
+        el.focus();
+        try{ el.setSelectionRange(savedSel, savedSel); }catch(e){}
+      }
+    }
   }
+
+  const softRender = render;
 
   function viewHome(){
     return `
@@ -1029,10 +1051,15 @@
   function viewGroupHome(){
     if(!state.group) return viewHome();
     const link = shareLink(state.groupCode, null);
-    const sessions = null;
+    const members = state.group.members || [];
     return `
       ${marquee(state.group.name)}
       <div class="wrap">
+        <div class="card">
+          <h2 class="section-title">Who's in the group</h2>
+          ${members.length ? `<div>${members.map(m=>`<span class="chip">${esc(m.name)}</span>`).join('')}</div>` : `<div class="empty-state">Just you so far — share the code below.</div>`}
+        </div>
+
         <div class="ticket center">
           <div class="muted" style="font-weight:700;">GROUP CODE</div>
           <div class="code-badge mono">${esc(state.groupCode)}</div>
@@ -1105,16 +1132,6 @@
     return `
       ${marquee(s.name)}
       <div class="wrap">
-        <div class="ticket center">
-          <div class="muted" style="font-weight:700;">SESSION CODE</div>
-          <div class="code-badge mono">${esc(s.id)}</div>
-          <div class="perf"></div>
-          <div class="qr-box"><img src="${qrUrl(link)}" alt="QR code to join this session"></div>
-          <div style="margin-top:10px;">
-            <button class="btn btn-ghost btn-sm" data-action="copyLink" data-link="${esc(link)}">📋 Copy invite link</button>
-          </div>
-        </div>
-
         <div class="card">
           <h2 class="section-title">Who's here</h2>
           <div>${(s.participants||[]).map(p=>`<span class="chip${p.id===s.hostId?' host':''}">${esc(p.name)}</span>`).join('')}</div>
@@ -1130,6 +1147,16 @@
           ${s.topics.length ? `<ul class="topic-list">${s.topics.slice().reverse().map(t=>`<li><span>${esc(t.text)}</span><small>${esc(t.submittedBy)}</small></li>`).join('')}</ul>` : '<div class="empty-state">The pot is empty — toss in the first guess.</div>'}
         </div>
 
+        <div class="ticket center">
+          <div class="muted" style="font-weight:700;">SESSION CODE</div>
+          <div class="code-badge mono">${esc(s.id)}</div>
+          <div class="perf"></div>
+          <div class="qr-box"><img src="${qrUrl(link)}" alt="QR code to join this session"></div>
+          <div style="margin-top:10px;">
+            <button class="btn btn-ghost btn-sm" data-action="copyLink" data-link="${esc(link)}">📋 Copy invite link</button>
+          </div>
+        </div>
+
         ${isHost ? `
           <button class="btn btn-primary btn-block" ${n?'':'disabled'} data-action="startGame">
             ${n ? `🎲 Shuffle boards &amp; start (${n}×${n})` : `Need ${need} more guess${need===1?'':'es'} to start`}
@@ -1138,27 +1165,20 @@
           <div class="empty-state">Waiting for the host to shuffle the boards and start the game…</div>
         `}
 
-        <div class="card" style="border-style:dashed; margin-top:16px;">
-          <h2 class="section-title">🧪 Testing tools</h2>
-          <p class="muted">Skip the manual typing — auto-fill guesses so you can try both grid sizes.</p>
-          <button class="btn btn-ghost btn-block test-tool-btn" data-action="seedTopics">🧪 Auto-fill guesses (up to 24, unlocks 5×5)</button>
-        </div>
+        ${state.testMode ? `
+          <div class="card" style="border-style:dashed; margin-top:16px;">
+            <h2 class="section-title">🧪 Testing tools</h2>
+            <p class="muted">Skip the manual typing — auto-fill guesses so you can try both grid sizes.</p>
+            <button class="btn btn-ghost btn-block test-tool-btn" data-action="seedTopics">🧪 Auto-fill guesses (up to 24, unlocks 5×5)</button>
+          </div>
+        ` : ''}
       </div>
     `;
   }
 
   function personalBoard(session){
-    const n = session.gridSize;
     const order = seededShuffle(session.pool, session.id + ':' + state.identity.id);
-    const cells = [];
-    const total = n*n;
-    const center = Math.floor(total/2);
-    let oi = 0;
-    for(let i=0;i<total;i++){
-      if(n % 2 === 1 && i === center){ cells.push({free:true}); }
-      else { cells.push({topicId: order[oi++]}); }
-    }
-    return cells;
+    return order.map(topicId => ({topicId}));
   }
 
   function topicText(session, id){
@@ -1172,6 +1192,7 @@
     const isHost = state.identity && s.hostId === state.identity.id;
     const cells = personalBoard(s);
     const n = s.gridSize;
+    const link = shareLink(state.groupCode, s.id);
     return `
       ${marquee(s.name)}
       <div class="wrap">
@@ -1192,11 +1213,23 @@
 
         ${isHost ? `<button class="btn btn-primary btn-block" data-action="confirmEnd">🔔 End this meetup &amp; lock the tally</button>` : ''}
 
-        <div class="card" style="border-style:dashed; margin-top:16px;">
-          <h2 class="section-title">🧪 Testing tools</h2>
-          <p class="muted">Simulate a room full of people tapping, instead of clicking 20 squares yourself.</p>
-          <button class="btn btn-ghost btn-block test-tool-btn" data-action="simulateTaps">🧪 Simulate some crowd tapping</button>
+        <div class="ticket center" style="margin-top:16px;">
+          <div class="muted" style="font-weight:700;">SESSION CODE</div>
+          <div class="code-badge mono">${esc(s.id)}</div>
+          <div class="perf"></div>
+          <div class="qr-box"><img src="${qrUrl(link)}" alt="QR code to join this session"></div>
+          <div style="margin-top:10px;">
+            <button class="btn btn-ghost btn-sm" data-action="copyLink" data-link="${esc(link)}">📋 Copy invite link</button>
+          </div>
         </div>
+
+        ${state.testMode ? `
+          <div class="card" style="border-style:dashed; margin-top:16px;">
+            <h2 class="section-title">🧪 Testing tools</h2>
+            <p class="muted">Simulate a room full of people tapping, instead of clicking 20 squares yourself.</p>
+            <button class="btn btn-ghost btn-block test-tool-btn" data-action="simulateTaps">🧪 Simulate some crowd tapping</button>
+          </div>
+        ` : ''}
       </div>
     `;
   }
@@ -1367,6 +1400,7 @@
       if(!normTopic(val)){ toast('Give us a name to write on the ticket'); return; }
       await saveIdentity(val);
       if(state.session) await ensureParticipant(state.session);
+      if(state.group) state.group = await ensureGroupMember(state.group);
       render();
     }
     else if(action === 'createGroup'){
