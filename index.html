@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeBringo — Topic Tally</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Work+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --tent-red:#C8102E;
+    --tent-red-dark:#8F0B1F;
+    --cream:#FFF8E7;
+    --cream-dark:#F3E4BF;
+    --gold:#F2B705;
+    --gold-dark:#C9930A;
+    --green:#1E7A5F;
+    --ink:#241A14;
+    --muted:#8A7860;
+    --shadow: 0 6px 0 rgba(36,26,20,0.12);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Work Sans', sans-serif;
+    color:var(--ink);
+    background:
+      repeating-linear-gradient(135deg, var(--tent-red) 0 26px, var(--tent-red-dark) 26px 52px);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{
+    max-width:820px;
+    margin:0 auto;
+    min-height:100vh;
+    background:var(--cream);
+    box-shadow: 0 0 60px rgba(0,0,0,0.35);
+    padding-bottom:60px;
+    position:relative;
+  }
+  .display{font-family:'Bungee', cursive; letter-spacing:0.5px;}
+  .mono{font-family:'Space Mono', monospace;}
+
+  /* ---------- Marquee header ---------- */
+  .marquee{
+    background:
+      repeating-linear-gradient(45deg, var(--tent-red) 0 18px, var(--tent-red-dark) 18px 36px);
+    padding:22px 20px 26px;
+    position:relative;
+    border-bottom:6px solid var(--gold);
+  }
+  .marquee-lights{
+    position:absolute; left:0; right:0; top:0; height:14px;
+    background-image: radial-gradient(circle, var(--gold) 3.5px, transparent 3.6px);
+    background-size: 22px 14px;
+    background-position: 8px center;
+    animation: twinkle 1.4s steps(1) infinite;
+  }
+  .marquee-lights.b{
+    background-position: 19px center;
+    animation-delay:0.7s;
+  }
+  @keyframes twinkle{
+    0%,49%{opacity:1;}
+    50%,100%{opacity:0.25;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .marquee-lights, .marquee-lights.b{animation:none; opacity:0.85;}
+  }
+  .marquee h1{
+    color:var(--cream);
+    text-align:center;
+    font-size:clamp(1.5rem, 5vw, 2.4rem);
+    margin:10px 0 4px;
+    text-shadow: 2px 2px 0 var(--tent-red-dark);
+  }
+  .marquee-home{
+    display:block;
+    width:100%;
+    background:none;
+    border:none;
+    padding:0;
+    margin:0;
+    cursor:pointer;
+    font:inherit;
+  }
+  .marquee-home:focus-visible h1{ outline:3px solid var(--gold); outline-offset:4px; border-radius:6px; }
+  .marquee .tagline{
+    color:var(--cream-dark);
+    text-align:center;
+    font-size:0.85rem;
+    font-weight:600;
+    letter-spacing:0.5px;
+  }
+
+  /* ---------- generic ---------- */
+  .wrap{padding:20px 18px 8px;}
+  .card{
+    background:var(--cream);
+    border:2px solid var(--gold-dark);
+    border-radius:14px;
+    padding:18px;
+    margin-bottom:16px;
+    box-shadow:var(--shadow);
+  }
+  .ticket{
+    background:var(--cream-dark);
+    border:2px dashed var(--tent-red);
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:16px;
+    position:relative;
+  }
+  .ticket .perf{
+    height:10px;
+    margin:12px -16px;
+    background-image: radial-gradient(circle, var(--cream) 4px, transparent 4.2px);
+    background-size:16px 10px;
+    background-position:center;
+  }
+  h2.section-title{
+    font-family:'Bungee', cursive;
+    font-size:1rem;
+    color:var(--tent-red);
+    margin:0 0 12px;
+    letter-spacing:0.3px;
+  }
+  label{display:block; font-weight:700; font-size:0.82rem; margin-bottom:6px; color:var(--ink);}
+  input[type=text]{
+    width:100%;
+    padding:11px 12px;
+    border:2px solid var(--gold-dark);
+    border-radius:8px;
+    font-family:'Work Sans', sans-serif;
+    font-size:0.95rem;
+    background:#fff;
+    color:var(--ink);
+  }
+  input[type=text]:focus{outline:3px solid var(--green); outline-offset:1px;}
+  .field{margin-bottom:14px;}
+  .row{display:flex; gap:10px; flex-wrap:wrap;}
+  .row > *{flex:1; min-width:140px;}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    font-family:'Work Sans', sans-serif;
+    font-weight:800;
+    font-size:0.9rem;
+    padding:12px 20px;
+    border-radius:999px;
+    border:2px solid var(--ink);
+    cursor:pointer;
+    text-decoration:none;
+    box-shadow: 0 3px 0 var(--ink);
+    transition: transform 0.08s ease;
+  }
+  .btn:active{transform:translateY(3px); box-shadow:none;}
+  .btn:focus-visible{outline:3px solid var(--green); outline-offset:2px;}
+  .btn-primary{background:var(--tent-red); color:var(--cream); border-color:var(--tent-red-dark); box-shadow:0 3px 0 var(--tent-red-dark);}
+  .btn-gold{background:var(--gold); color:var(--ink); border-color:var(--gold-dark); box-shadow:0 3px 0 var(--gold-dark);}
+  .btn-ghost{background:var(--cream); color:var(--tent-red); border-color:var(--tent-red);}
+  .btn-green{background:var(--green); color:var(--cream); border-color:#124F3F; box-shadow:0 3px 0 #124F3F;}
+  .btn[disabled]{opacity:0.45; cursor:not-allowed; box-shadow:none; transform:none;}
+  .btn-block{width:100%;}
+  .btn-sm{padding:8px 14px; font-size:0.8rem;}
+
+  .code-badge{
+    display:inline-block;
+    font-family:'Space Mono', monospace;
+    font-weight:700;
+    font-size:1.3rem;
+    letter-spacing:3px;
+    background:var(--gold);
+    color:var(--ink);
+    padding:6px 14px;
+    border-radius:8px;
+    border:2px solid var(--gold-dark);
+  }
+  .muted{color:var(--muted); font-size:0.85rem;}
+  .center{text-align:center;}
+  .stack{display:flex; flex-direction:column; gap:10px;}
+
+  .chip{
+    display:inline-block;
+    background:var(--cream-dark);
+    border:1.5px solid var(--gold-dark);
+    border-radius:999px;
+    padding:5px 12px;
+    font-size:0.78rem;
+    font-weight:700;
+    margin:3px 4px 3px 0;
+  }
+  .chip.host::after{content:" ★ host";}
+
+  .qr-box{
+    text-align:center;
+    background:#fff;
+    padding:10px;
+    border-radius:10px;
+    border:2px solid var(--gold-dark);
+    display:inline-block;
+  }
+  .qr-box img{display:block; width:150px; height:150px;}
+
+  .empty-state{
+    text-align:center;
+    padding:22px 10px;
+    color:var(--muted);
+    font-style:italic;
+  }
+
+  .topic-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+  .topic-list li{
+    background:#fff;
+    border:1.5px solid var(--cream-dark);
+    border-left:5px solid var(--green);
+    border-radius:6px;
+    padding:9px 12px;
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    font-size:0.9rem;
+  }
+  .topic-list li small{color:var(--muted); white-space:nowrap;}
+
+  .toast{
+    position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:var(--cream); padding:10px 18px; border-radius:999px;
+    font-weight:700; font-size:0.85rem; z-index:999; box-shadow:0 4px 14px rgba(0,0,0,0.3);
+    animation: toastIn 0.2s ease;
+  }
+  @keyframes toastIn{from{opacity:0; transform:translate(-50%,10px);} to{opacity:1; transform:translate(-50%,0);}}
+
+  /* ---------- Tabs ---------- */
+  .tabs{display:flex; gap:8px; margin-bottom:14px;}
+  .tab{
+    flex:1; text-align:center; padding:10px; border-radius:8px 8px 0 0;
+    font-weight:800; font-size:0.85rem; cursor:pointer;
+    background:var(--cream-dark); border:2px solid var(--gold-dark); border-bottom:none;
+    color:var(--muted);
+  }
+  .tab.active{background:var(--cream); color:var(--tent-red);}
+
+  /* ---------- Bingo grid ---------- */
+  .board-wrap{display:flex; justify-content:center; margin-bottom:16px;}
+  .board{
+    display:grid;
+    gap:6px;
+    width:100%;
+    max-width:520px;
+  }
+  .cell{
+    position:relative;
+    aspect-ratio:1/1;
+    background:#fff;
+    border:2px solid var(--tent-red);
+    border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    padding:6px;
+    cursor:pointer;
+    overflow:hidden;
+    font-weight:600;
+    text-align:center;
+    font-size:clamp(0.55rem, 2.6vw, 0.78rem);
+    line-height:1.15;
+    color:var(--ink);
+  }
+  .cell:focus-visible{outline:3px solid var(--green); outline-offset:2px;}
+  .cell .txt{position:relative; z-index:3; display:-webkit-box; -webkit-line-clamp:5; -webkit-box-orient:vertical; overflow:hidden;}
+  .cell.free{
+    background:var(--gold);
+    border-color:var(--gold-dark);
+    font-family:'Bungee', cursive;
+    color:var(--ink);
+    font-size:clamp(0.6rem, 2.8vw, 0.85rem);
+  }
+  .dauber{
+    position:absolute;
+    width:70%; height:70%;
+    border-radius:50%;
+    z-index:1;
+    opacity:0.55;
+    background: radial-gradient(circle at 35% 35%, rgba(200,16,46,0.85), rgba(200,16,46,0.35) 60%, transparent 72%);
+  }
+  .dauber.gold{background: radial-gradient(circle at 35% 35%, rgba(242,183,5,0.9), rgba(242,183,5,0.4) 60%, transparent 72%);}
+  .dauber.pop{animation: stampPop 0.25s ease;}
+  @keyframes stampPop{ from{transform:scale(1.5) rotate(var(--rot,0deg)); opacity:0;} to{transform:scale(1) rotate(var(--rot,0deg)); opacity:0.55;} }
+  @media (prefers-reduced-motion: reduce){ .dauber.pop{animation:none;} }
+  .count-badge{
+    position:absolute; top:3px; right:3px; z-index:4;
+    background:var(--ink); color:var(--cream);
+    font-family:'Space Mono', monospace; font-weight:700;
+    font-size:0.65rem; min-width:17px; height:17px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    padding:0 2px;
+  }
+  .minus-btn{
+    position:absolute; bottom:2px; left:2px; z-index:4;
+    background:var(--cream); border:1.5px solid var(--tent-red); color:var(--tent-red);
+    width:16px; height:16px; border-radius:50%; font-size:0.65rem; line-height:1;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-weight:700;
+  }
+
+  .leaderboard{list-style:none; margin:0; padding:0;}
+  .leaderboard li{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 8px;
+    border-bottom:1.5px dashed var(--cream-dark);
+    font-size:0.9rem;
+  }
+  .leaderboard li:nth-child(even){background:var(--cream-dark);}
+  .rank{
+    width:26px; height:26px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:0.78rem; flex-shrink:0;
+    background:var(--cream-dark); color:var(--ink);
+  }
+  .leaderboard li:nth-child(1) .rank{background:var(--gold); color:var(--ink);}
+  .leaderboard li:nth-child(2) .rank{background:#D8D8D8;}
+  .leaderboard li:nth-child(3) .rank{background:#E3B27A;}
+  .lb-text{flex:1;}
+  .lb-count{font-family:'Space Mono', monospace; font-weight:700; color:var(--tent-red);}
+
+  .hero-callout{
+    background: repeating-linear-gradient(45deg, var(--tent-red) 0 14px, var(--tent-red-dark) 14px 28px);
+    color:var(--cream); border-radius:12px; padding:20px; text-align:center; margin-bottom:16px;
+    border:3px solid var(--gold);
+  }
+  .hero-callout .big{font-family:'Bungee', cursive; font-size:clamp(1.2rem,5vw,1.8rem); text-shadow:2px 2px 0 var(--tent-red-dark);}
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(36,26,20,0.6);
+    display:flex; align-items:center; justify-content:center; z-index:1000; padding:20px;
+  }
+  .modal{background:var(--cream); border:3px solid var(--gold); border-radius:14px; padding:24px; max-width:360px; width:100%;}
+
+  .footer-note{text-align:center; color:var(--muted); font-size:0.75rem; padding:16px;}
+
+  .test-bar{
+    position:fixed; left:10px; bottom:10px; z-index:600;
+  }
+  .test-pill{
+    font-family:'Space Mono', monospace;
+    font-size:0.72rem; font-weight:700;
+    background:var(--ink); color:var(--gold);
+    border:2px solid var(--gold);
+    border-radius:999px; padding:8px 14px;
+    cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,0.3);
+  }
+  .identity-list{display:flex; flex-direction:column; gap:8px; margin:12px 0;}
+  .identity-list button{
+    text-align:left; background:#fff; border:1.5px solid var(--cream-dark);
+    border-radius:8px; padding:9px 12px; cursor:pointer; font-weight:700; font-size:0.85rem;
+  }
+  .identity-list button.current{border-color:var(--green); background:var(--cream-dark);}
+  .test-tool-btn{border-style:dashed;}
+
+  @media (max-width:480px){
+    .wrap{padding:14px 12px;}
+    .card, .ticket{padding:14px;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ===================== Supabase config ===================== */
+  const SUPABASE_URL = 'https://aiomjffywwbrsebxeiyj.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_3S_FYvYdUijNQGngUs4QxQ__7P5sNoy';
+  const SUPABASE_TABLE = 'kv_store';
+
+  /* ===================== Storage helpers =====================
+     "shared" data (groups/sessions everyone needs to see) lives in
+     Supabase. "personal" data (just this browser's identity) lives
+     in localStorage — it never needs to leave this device. */
+  async function sGet(key, shared){
+    if(!shared){
+      try{
+        const raw = localStorage.getItem('wb:'+key);
+        if(raw == null) return null;
+        try{ return JSON.parse(raw); }catch(e){ return raw; }
+      }catch(e){ return null; }
+    }
+    try{
+      const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?key=eq.${encodeURIComponent(key)}&select=value`;
+      const res = await fetch(url, {
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY }
+      });
+      if(!res.ok) return null;
+      const rows = await res.json();
+      if(!rows || !rows.length) return null;
+      try{ return JSON.parse(rows[0].value); }catch(e){ return rows[0].value; }
+    }catch(e){ console.error('storage get failed', e); return null; }
+  }
+  async function sSet(key, value, shared){
+    const payload = JSON.stringify(value);
+    if(!shared){
+      try{
+        localStorage.setItem('wb:'+key, payload);
+        return true;
+      }catch(e){ return false; }
+    }
+    try{
+      const url = `${SUPABASE_URL}/rest/v1/${SUPABASE_TABLE}?on_conflict=key`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify({ key, value: payload }),
+      });
+      if(!res.ok){
+        let detail = '';
+        try{ detail = (await res.json()).message || ''; }catch(e){}
+        console.error('Supabase save failed', res.status, detail);
+        toast('⚠️ Save failed (' + res.status + ')' + (detail ? ': ' + detail : ' — check console'));
+        return false;
+      }
+      return true;
+    }catch(e){
+      console.error('storage set failed', e);
+      toast('⚠️ Save failed — check your connection / console');
+      return false;
+    }
+  }
+
+  /* ===================== Utilities ===================== */
+  function uid(){
+    if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'id-' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+  const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  function genCode(len){
+    len = len || 5;
+    let s = '';
+    for(let i=0;i<len;i++) s += CODE_CHARS[Math.floor(Math.random()*CODE_CHARS.length)];
+    return s;
+  }
+  function esc(str){
+    return String(str==null?'':str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function normTopic(t){ return t.trim().replace(/\s+/g,' '); }
+  function normKey(t){ return normTopic(t).toLowerCase(); }
+  function hashStr(str){
+    let h = 1779033703 ^ str.length;
+    for(let i=0;i<str.length;i++){
+      h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+      h = (h << 13) | (h >>> 19);
+    }
+    return function(){
+      h = Math.imul(h ^ (h >>> 16), 2246822507);
+      h = Math.imul(h ^ (h >>> 13), 3266489909);
+      h ^= h >>> 16;
+      return h >>> 0;
+    };
+  }
+  function mulberry32(seed){
+    return function(){
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function seededShuffle(arr, seedStr){
+    const seedFn = hashStr(String(seedStr));
+    const rnd = mulberry32(seedFn());
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(rnd()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+  function fmtDate(ts){
+    if(!ts) return '';
+    const d = new Date(ts);
+    return d.toLocaleDateString(undefined,{month:'short', day:'numeric'}) + ' · ' + d.toLocaleTimeString(undefined,{hour:'numeric', minute:'2-digit'});
+  }
+  function qrUrl(data){
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=6&data=' + encodeURIComponent(data);
+  }
+  function shareLink(groupCode, sessionId){
+    const base = location.origin + location.pathname;
+    let url = base + '?group=' + encodeURIComponent(groupCode);
+    if(sessionId) url += '&session=' + encodeURIComponent(sessionId);
+    return url;
+  }
+
+  /* ===================== Test-mode sample data ===================== */
+  const SAMPLE_TOPICS = [
+    "Someone brings up politics", "The Wi-Fi password gets asked", "A pet interrupts the conversation",
+    "Someone shows old photos", "Plans for next meetup get discussed", "Someone complains about traffic",
+    "A conspiracy theory comes up", "Someone talks about their diet", "A childhood story gets retold",
+    "Someone checks their phone mid-conversation", "The food gets complimented", "Someone brings up work drama",
+    "A movie or show recommendation happens", "Someone mentions the weather", "An old inside joke resurfaces",
+    "Someone asks 'remember when...'", "A fact gets disputed and settled by phone search",
+    "Someone talks about their workout routine", "A kid or pet does something cute",
+    "Someone brings up a recent trip", "The host insists everyone eats more",
+    "Someone complains about their commute", "A relationship status gets discussed",
+    "Someone name-drops a celebrity encounter", "The conversation drifts to true crime",
+    "Someone brings up horoscopes", "A card or board game gets suggested",
+    "Someone dozes off on the couch", "A group photo gets taken",
+    "Someone asks about everyone's plans for next year"
+  ];
+  const SAMPLE_NAMES = ['Alex','Sam','Jordan','Riley','Taylor','Morgan'];
+
+  /* ===================== State ===================== */
+  const state = {
+    identity: null,       // {id, name}
+    view: 'home',         // home | groupHome | lobby | play | results | halloffame
+    groupCode: null,
+    group: null,
+    sessionId: null,
+    session: null,
+    playTab: 'board',      // board | leaderboard
+    hofData: null,
+    toastMsg: null,
+    toastTimer: null,
+    pollTimer: null,
+    error: null,
+    showIdentityPanel: false,
+    showEndConfirm: false,
+    showNewSessionModal: false,
+    testMode: false,       // true once the secret "testing123" code has been entered
+  };
+
+  function toast(msg){
+    state.toastMsg = msg;
+    render();
+    clearTimeout(state.toastTimer);
+    state.toastTimer = setTimeout(()=>{ state.toastMsg = null; render(); }, 2200);
+  }
+
+  /* ===================== Identity ===================== */
+  async function loadIdentity(){
+    const id = await sGet('identity', false);
+    if(id && id.name) state.identity = id;
+  }
+  async function saveIdentity(name){
+    const identity = state.identity && state.identity.id ? state.identity : { id: uid() };
+    identity.name = normTopic(name).slice(0,30) || 'Guest';
+    state.identity = identity;
+    await sSet('identity', identity, false);
+    await pushRecentIdentity(identity);
+  }
+  async function getRecentIdentities(){
+    const list = await sGet('identities', false);
+    return Array.isArray(list) ? list : [];
+  }
+  async function pushRecentIdentity(identity){
+    let list = await getRecentIdentities();
+    list = list.filter(p => p.id !== identity.id);
+    list.unshift({id: identity.id, name: identity.name});
+    list = list.slice(0, 6);
+    await sSet('identities', list, false);
+  }
+  async function switchToIdentity(id, name){
+    state.identity = {id, name};
+    await sSet('identity', state.identity, false);
+    await pushRecentIdentity(state.identity);
+    if(state.session){
+      await ensureParticipant(state.session);
+    }
+    state.showIdentityPanel = false;
+    toast('Now testing as ' + name);
+    render();
+  }
+
+  /* ===================== Data ops ===================== */
+  async function ensureParticipant(session){
+    if(!session.participants) session.participants = [];
+    const exists = session.participants.some(p=>p.id === state.identity.id);
+    if(!exists){
+      session.participants.push({id: state.identity.id, name: state.identity.name});
+      await sSet('session:'+session.id, session, true);
+    }
+    return session;
+  }
+
+  async function createGroup(name){
+    const code = genCode(5);
+    const group = { code, name: normTopic(name).slice(0,40) || 'Our Group', createdAt: Date.now(), sessionIds: [] };
+    const ok = await sSet('group:'+code, group, true);
+    if(!ok) return false;
+    state.groupCode = code;
+    state.group = group;
+    state.view = 'groupHome';
+    updateUrl();
+    render();
+    return true;
+  }
+
+  async function joinGroup(code){
+    code = code.trim();
+    if(!code){ toast('Enter a group code first'); return; }
+    if(code.toLowerCase() === 'testing123'){
+      await loadDemo();
+      return;
+    }
+    code = code.toUpperCase();
+    const group = await sGet('group:'+code, true);
+    if(!group){ toast("Can't find a group with that code"); return; }
+    state.groupCode = code;
+    state.group = group;
+    state.view = 'groupHome';
+    updateUrl();
+    render();
+  }
+
+  async function refreshGroup(){
+    if(!state.groupCode) return;
+    const g = await sGet('group:'+state.groupCode, true);
+    if(g) state.group = g;
+  }
+
+  async function createSession(name){
+    if(!state.group) return false;
+    const id = genCode(6) + '-' + Math.floor(Math.random()*900+100);
+    const session = {
+      id,
+      groupCode: state.groupCode,
+      name: normTopic(name).slice(0,40) || 'Meetup',
+      hostId: state.identity.id,
+      phase: 'setup',
+      createdAt: Date.now(),
+      topics: [],
+      counts: {},
+      participants: [{id: state.identity.id, name: state.identity.name}],
+      gridSize: null,
+      pool: null,
+    };
+    const ok1 = await sSet('session:'+id, session, true);
+    if(!ok1) return false;
+    state.group.sessionIds = state.group.sessionIds || [];
+    state.group.sessionIds.push(id);
+    const ok2 = await sSet('group:'+state.groupCode, state.group, true);
+    if(!ok2) return false;
+    state.sessionId = id;
+    state.session = session;
+    state.view = 'lobby';
+    updateUrl();
+    render();
+    return true;
+  }
+
+  async function openSession(id){
+    const session = await sGet('session:'+id, true);
+    if(!session){ toast('Session not found'); return; }
+    state.sessionId = id;
+    state.session = await ensureParticipant(session);
+    state.view = session.phase === 'setup' ? 'lobby' : session.phase === 'playing' ? 'play' : 'results';
+    updateUrl();
+    render();
+  }
+
+  async function refreshSession(){
+    if(!state.sessionId) return null;
+    const s = await sGet('session:'+state.sessionId, true);
+    if(s) state.session = s;
+    return s;
+  }
+
+  async function addTopic(text){
+    text = normTopic(text);
+    if(!text){ return; }
+    if(text.length > 80) text = text.slice(0,80);
+    const fresh = await refreshSession() || state.session;
+    fresh.topics.push({ id: uid(), text, submittedBy: state.identity.name });
+    await sSet('session:'+fresh.id, fresh, true);
+    state.session = fresh;
+    toast('Guess added to the pot 🎟️');
+    render();
+  }
+
+  function pickGridSize(count){
+    if(count >= 24) return 5;
+    if(count >= 8) return 3;
+    return 0;
+  }
+
+  async function startGame(){
+    const fresh = await refreshSession() || state.session;
+    const n = pickGridSize(fresh.topics.length);
+    if(!n){ toast('Need at least 8 guesses to start'); render(); return; }
+    const needed = n*n - 1;
+    const pool = seededShuffle(fresh.topics, fresh.id).slice(0, needed).map(t=>t.id);
+    fresh.gridSize = n;
+    fresh.pool = pool;
+    fresh.phase = 'playing';
+    fresh.startedAt = Date.now();
+    const counts = fresh.counts || {};
+    pool.forEach(id=>{ if(!(id in counts)) counts[id] = 0; });
+    fresh.counts = counts;
+    await sSet('session:'+fresh.id, fresh, true);
+    state.session = fresh;
+    state.view = 'play';
+    render();
+  }
+
+  async function tally(topicId, delta){
+    const fresh = state.session;
+    if(!fresh) return;
+    fresh.counts = fresh.counts || {};
+    const next = Math.max(0, (fresh.counts[topicId]||0) + delta);
+    fresh.counts[topicId] = next;
+    render();
+    await sSet('session:'+fresh.id, fresh, true);
+  }
+
+  async function endSession(){
+    const fresh = await refreshSession() || state.session;
+    fresh.phase = 'ended';
+    fresh.endedAt = Date.now();
+    await sSet('session:'+fresh.id, fresh, true);
+    goHome();
+  }
+
+  /* ===================== Test-mode helpers ===================== */
+  async function addSampleTopics(){
+    const fresh = await refreshSession() || state.session;
+    const need = 24 - fresh.topics.length;
+    if(need <= 0){ toast('Already got plenty of guesses'); render(); return true; }
+    const existingKeys = new Set(fresh.topics.map(t=>normKey(t.text)));
+    let added = 0, si = 0;
+    for(const topicText of SAMPLE_TOPICS){
+      if(added >= need) break;
+      if(existingKeys.has(normKey(topicText))) continue;
+      fresh.topics.push({ id: uid(), text: topicText, submittedBy: SAMPLE_NAMES[si % SAMPLE_NAMES.length] });
+      si++; added++;
+    }
+    const ok = await sSet('session:'+fresh.id, fresh, true);
+    if(!ok) return false;
+    state.session = fresh;
+    toast('Added ' + added + ' sample guesses');
+    render();
+    return true;
+  }
+
+  async function simulateTaps(){
+    const fresh = await refreshSession() || state.session;
+    if(!fresh.pool || !fresh.pool.length){ toast('Start the game first'); render(); return; }
+    fresh.counts = fresh.counts || {};
+    const shuffled = seededShuffle(fresh.pool, 'sim-' + Date.now());
+    const hitCount = Math.min(shuffled.length, 3 + Math.floor(Math.random()*4));
+    for(let i=0;i<hitCount;i++){
+      const id = shuffled[i];
+      fresh.counts[id] = (fresh.counts[id]||0) + 1 + Math.floor(Math.random()*3);
+    }
+    await sSet('session:'+fresh.id, fresh, true);
+    state.session = fresh;
+    toast('Simulated some crowd noise 🎉');
+    render();
+  }
+
+  async function loadDemo(){
+    state.testMode = true;
+    if(!state.identity || !state.identity.name){
+      await saveIdentity('Tester (you)');
+    }
+    const groupOk = await createGroup('Demo Crew');
+    if(!groupOk) return; // the real error is already showing as a toast — don't paper over it
+    const sessionOk = await createSession('Test Meetup');
+    if(!sessionOk) return;
+    const fresh = await refreshSession() || state.session;
+    SAMPLE_NAMES.slice(0,4).forEach(n=>{
+      if(!fresh.participants.some(p=>p.name===n)) fresh.participants.push({id: uid(), name: n});
+    });
+    const savedOk = await sSet('session:'+fresh.id, fresh, true);
+    if(!savedOk) return;
+    state.session = fresh;
+    const topicsOk = await addSampleTopics();
+    if(!topicsOk) return;
+    toast("Demo ready — you're the host. Use the 🧪 button below to test as a guest.");
+    render();
+  }
+
+  async function loadHallOfFame(){
+    if(!state.group) return;
+    const ids = state.group.sessionIds || [];
+    const sessions = [];
+    for(const id of ids){
+      const s = await sGet('session:'+id, true);
+      if(s) sessions.push(s);
+    }
+    const agg = {};
+    sessions.forEach(s=>{
+      (s.topics||[]).forEach(t=>{
+        const k = normKey(t.text);
+        const c = (s.counts && s.counts[t.id]) || 0;
+        if(!agg[k]) agg[k] = { text: t.text, total: 0, sessions: 0 };
+        agg[k].total += c;
+        if(c>0) agg[k].sessions += 1;
+      });
+    });
+    const topics = Object.values(agg).sort((a,b)=>b.total-a.total);
+    sessions.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    state.hofData = { topics, sessions };
+  }
+
+  /* ===================== URL ===================== */
+  function updateUrl(){
+    try{
+      const url = new URL(location.href);
+      if(state.groupCode) url.searchParams.set('group', state.groupCode); else url.searchParams.delete('group');
+      if(state.sessionId) url.searchParams.set('session', state.sessionId); else url.searchParams.delete('session');
+      history.replaceState(null, '', url.toString());
+    }catch(e){}
+  }
+
+  function goHome(){
+    state.groupCode = null;
+    state.group = null;
+    state.sessionId = null;
+    state.session = null;
+    state.view = 'home';
+    updateUrl();
+    render();
+  }
+
+  /* ===================== Init ===================== */
+  async function init(){
+    await loadIdentity();
+    const params = new URLSearchParams(location.search);
+    const g = params.get('group');
+    const s = params.get('session');
+    if(g){
+      const group = await sGet('group:'+g, true);
+      if(group){
+        state.groupCode = g;
+        state.group = group;
+        state.view = 'groupHome';
+        if(s){
+          const session = await sGet('session:'+s, true);
+          if(session){
+            state.sessionId = s;
+            state.session = session;
+            state.view = session.phase === 'setup' ? 'lobby' : session.phase === 'playing' ? 'play' : 'results';
+          }
+        }
+      }
+    }
+    render();
+    startPolling();
+  }
+
+  function startPolling(){
+    clearInterval(state.pollTimer);
+    state.pollTimer = setInterval(async ()=>{
+      if(!state.identity) return;
+      if(state.view === 'lobby' || state.view === 'play' || state.view === 'results'){
+        const before = JSON.stringify(state.session);
+        const s = await refreshSession();
+        if(s){
+          if(s.phase === 'playing' && state.view === 'lobby') state.view = 'play';
+          if(s.phase === 'ended' && (state.view === 'lobby' || state.view === 'play')) state.view = 'results';
+          if(JSON.stringify(s) !== before) softRender();
+        }
+      } else if(state.view === 'groupHome'){
+        await refreshGroup();
+        softRender();
+      }
+    }, 4000);
+  }
+
+  // Re-render but keep focus/value of an actively-typed input
+  function softRender(){
+    const active = document.activeElement;
+    let savedId = null, savedVal = null, savedSel = null;
+    if(active && active.tagName === 'INPUT' && active.id){
+      savedId = active.id; savedVal = active.value; savedSel = active.selectionStart;
+    }
+    render();
+    if(savedId){
+      const el = document.getElementById(savedId);
+      if(el){
+        el.value = savedVal;
+        el.focus();
+        try{ el.setSelectionRange(savedSel, savedSel); }catch(e){}
+      }
+    }
+  }
+
+  /* ===================== Rendering ===================== */
+  const app = document.getElementById('app');
+
+  function marquee(subtitle){
+    return `
+      <div class="marquee">
+        <div class="marquee-lights"></div>
+        <div class="marquee-lights b"></div>
+        <button class="marquee-home" data-action="goHome" aria-label="Back to home">
+          <h1 class="display">🎪 WeBringo</h1>
+        </button>
+        <div class="tagline">${esc(subtitle||'Guess it. Spot it. Stamp it.')}</div>
+      </div>`;
+  }
+
+  function nameModal(){
+    if(state.identity && state.identity.name) return '';
+    return `
+      <div class="modal-overlay">
+        <div class="modal">
+          <h2 class="section-title">Step right up!</h2>
+          <p class="muted">What should we call you on the tally sheet?</p>
+          <div class="field">
+            <input type="text" id="nameInput" placeholder="Your name" maxlength="30">
+          </div>
+          <button class="btn btn-primary btn-block" data-action="setName">Save my name</button>
+        </div>
+      </div>`;
+  }
+
+  function testBar(){
+    if(!state.testMode) return '';
+    if(!state.identity || !state.identity.name) return '';
+    return `<div class="test-bar"><button class="test-pill" data-action="toggleIdentityPanel">🧪 Testing as ${esc(state.identity.name)} — switch</button></div>`;
+  }
+
+  function identityPanel(){
+    if(!state.showIdentityPanel) return '';
+    const recent = state.recentIdentities || [];
+    return `
+      <div class="modal-overlay" data-action="closeIdentityPanel">
+        <div class="modal">
+          <h2 class="section-title">🧪 Test as someone else</h2>
+          <p class="muted">Switch identity to simulate a friend joining from their own phone, all in this one tab. Your current session and group stay put — you're just changing who "you" are.</p>
+          <div class="identity-list">
+            ${recent.map(p => `<button class="${state.identity && state.identity.id===p.id ? 'current' : ''}" data-action="useIdentity" data-id="${esc(p.id)}" data-name="${esc(p.name)}">${p.id===state.identity.id ? '✓ ' : ''}${esc(p.name)}</button>`).join('')}
+          </div>
+          <div class="field">
+            <label for="newIdentityName">Or create a new tester</label>
+            <input type="text" id="newIdentityName" placeholder="e.g. Guest 2" maxlength="30">
+          </div>
+          <div class="row">
+            <button class="btn btn-gold" data-action="newIdentity">Switch to new person</button>
+            <button class="btn btn-ghost" data-action="closeIdentityPanel">Close</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function endConfirmModal(){
+    if(!state.showEndConfirm) return '';
+    return `
+      <div class="modal-overlay" data-action="cancelEndConfirm">
+        <div class="modal">
+          <h2 class="section-title">🔔 End this meetup?</h2>
+          <p class="muted">This locks in the final tally for everyone and moves the session to the recap screen. You can't add more tallies after this.</p>
+          <div class="row">
+            <button class="btn btn-primary" data-action="doEndSession">Yes, end it</button>
+            <button class="btn btn-ghost" data-action="cancelEndConfirm">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function newSessionModal(){
+    if(!state.showNewSessionModal) return '';
+    return `
+      <div class="modal-overlay" data-action="cancelNewSession">
+        <div class="modal">
+          <h2 class="section-title">🎉 New meetup</h2>
+          <p class="muted">What's this one called?</p>
+          <div class="field">
+            <input type="text" id="newSessionNameInput" placeholder="e.g. Sunday BBQ" maxlength="40">
+          </div>
+          <div class="row">
+            <button class="btn btn-primary" data-action="confirmNewSession">Create</button>
+            <button class="btn btn-ghost" data-action="cancelNewSession">Cancel</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function render(){
+    let html = '';
+    if(state.view === 'home') html = viewHome();
+    else if(state.view === 'groupHome') html = viewGroupHome();
+    else if(state.view === 'lobby') html = viewLobby();
+    else if(state.view === 'play') html = viewPlay();
+    else if(state.view === 'results') html = viewResults();
+    else if(state.view === 'halloffame') html = viewHallOfFame();
+    html += testBar();
+    html += nameModal();
+    html += identityPanel();
+    html += endConfirmModal();
+    html += newSessionModal();
+    if(state.toastMsg) html += `<div class="toast">${esc(state.toastMsg)}</div>`;
+    app.innerHTML = html;
+    if(state.view === 'groupHome') hydrateSessionList();
+  }
+
+  function viewHome(){
+    return `
+      ${marquee()}
+      <div class="wrap">
+        <div class="card">
+          <h2 class="section-title">🎡 Start a new friend group</h2>
+          <p class="muted">Every meetup, every running joke, kept in one place — for good.</p>
+          <div class="field">
+            <label for="newGroupName">Group name</label>
+            <input type="text" id="newGroupName" placeholder="e.g. The Sunday Crew" maxlength="40">
+          </div>
+          <button class="btn btn-primary btn-block" data-action="createGroup">Create the group</button>
+        </div>
+        <div class="card">
+          <h2 class="section-title">🎫 Join an existing group</h2>
+          <p class="muted">Got a code from a friend? Punch it in.</p>
+          <div class="field">
+            <label for="joinGroupCode">Group code</label>
+            <input type="text" id="joinGroupCode" placeholder="e.g. K7Q2M" maxlength="16" style="text-transform:uppercase;">
+          </div>
+          <button class="btn btn-gold btn-block" data-action="joinGroup">Join group</button>
+        </div>
+      </div>
+      <div class="footer-note">No accounts, no ads — just a shared link and a bit of ink.</div>
+    `;
+  }
+
+  function viewGroupHome(){
+    if(!state.group) return viewHome();
+    const link = shareLink(state.groupCode, null);
+    const sessions = null;
+    return `
+      ${marquee(state.group.name)}
+      <div class="wrap">
+        <div class="ticket center">
+          <div class="muted" style="font-weight:700;">GROUP CODE</div>
+          <div class="code-badge mono">${esc(state.groupCode)}</div>
+          <div class="perf"></div>
+          <div class="qr-box"><img src="${qrUrl(link)}" alt="QR code to join ${esc(state.group.name)}"></div>
+          <div style="margin-top:10px;">
+            <button class="btn btn-ghost btn-sm" data-action="copyLink" data-link="${esc(link)}">📋 Copy invite link</button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-block" style="margin-bottom:16px;" data-action="newSessionPrompt">🎉 Start a new meetup session</button>
+
+        <div class="card">
+          <h2 class="section-title">Past &amp; live meetups</h2>
+          ${renderSessionList()}
+        </div>
+
+        <button class="btn btn-gold btn-block" data-action="viewHallOfFame">🏆 View all-time Hall of Fame</button>
+      </div>
+    `;
+  }
+
+  function renderSessionList(){
+    const ids = (state.group.sessionIds||[]).slice().reverse();
+    if(!ids.length){
+      return `<div class="empty-state">No meetups yet — be the first to call one.</div>`;
+    }
+    // We don't have all session objects loaded; show current cached one plus placeholders resolved lazily
+    return `<div id="sessionListArea" class="stack">${ids.map(id=>`<div class="muted" data-session-placeholder="${esc(id)}">Loading…</div>`).join('')}</div>`;
+  }
+
+  async function hydrateSessionList(){
+    const area = document.getElementById('sessionListArea');
+    if(!area) return;
+    const placeholders = Array.from(area.querySelectorAll('[data-session-placeholder]'));
+    for(const el of placeholders){
+      const id = el.getAttribute('data-session-placeholder');
+      const s = await sGet('session:'+id, true);
+      if(!s){ el.outerHTML=''; continue; }
+      const top = topTopicOf(s);
+      const phaseLabel = s.phase === 'setup' ? '🟡 Setting up' : s.phase === 'playing' ? '🟢 Live now' : '⚪ Wrapped';
+      el.outerHTML = `
+        <div class="ticket" style="cursor:pointer;" data-action="openSession" data-session="${esc(id)}">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong>${esc(s.name)}</strong>
+            <span class="muted">${phaseLabel}</span>
+          </div>
+          <div class="muted" style="margin-top:4px;">${fmtDate(s.createdAt)}${top ? ' · Top pick: '+esc(top) : ''}</div>
+        </div>`;
+    }
+  }
+
+  function topTopicOf(session){
+    if(!session.counts) return null;
+    let best = null, bestC = 0;
+    (session.topics||[]).forEach(t=>{
+      const c = session.counts[t.id]||0;
+      if(c > bestC){ bestC = c; best = t.text; }
+    });
+    return bestC > 0 ? best : null;
+  }
+
+  function viewLobby(){
+    const s = state.session;
+    if(!s) return viewGroupHome();
+    const link = shareLink(state.groupCode, s.id);
+    const isHost = state.identity && s.hostId === state.identity.id;
+    const n = pickGridSize(s.topics.length);
+    const need = n ? null : (s.topics.length < 8 ? 8 - s.topics.length : 0);
+    return `
+      ${marquee(s.name)}
+      <div class="wrap">
+        <div class="ticket center">
+          <div class="muted" style="font-weight:700;">SESSION CODE</div>
+          <div class="code-badge mono">${esc(s.id)}</div>
+          <div class="perf"></div>
+          <div class="qr-box"><img src="${qrUrl(link)}" alt="QR code to join this session"></div>
+          <div style="margin-top:10px;">
+            <button class="btn btn-ghost btn-sm" data-action="copyLink" data-link="${esc(link)}">📋 Copy invite link</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 class="section-title">Who's here</h2>
+          <div>${(s.participants||[]).map(p=>`<span class="chip${p.id===s.hostId?' host':''}">${esc(p.name)}</span>`).join('')}</div>
+        </div>
+
+        <div class="card">
+          <h2 class="section-title">📝 Call your shots</h2>
+          <p class="muted">Everyone throws in guesses for what'll come up this session. Need 8+ for a board (24+ unlocks a big 5×5).</p>
+          <div class="row" style="margin-bottom:12px;">
+            <input type="text" id="topicInput" placeholder="e.g. Someone brings up the weather" maxlength="80">
+            <button class="btn btn-primary" data-action="addTopic" style="flex:0 0 auto;">Add</button>
+          </div>
+          ${s.topics.length ? `<ul class="topic-list">${s.topics.slice().reverse().map(t=>`<li><span>${esc(t.text)}</span><small>${esc(t.submittedBy)}</small></li>`).join('')}</ul>` : '<div class="empty-state">The pot is empty — toss in the first guess.</div>'}
+        </div>
+
+        ${isHost ? `
+          <button class="btn btn-primary btn-block" ${n?'':'disabled'} data-action="startGame">
+            ${n ? `🎲 Shuffle boards &amp; start (${n}×${n})` : `Need ${need} more guess${need===1?'':'es'} to start`}
+          </button>
+        ` : `
+          <div class="empty-state">Waiting for the host to shuffle the boards and start the game…</div>
+        `}
+
+        <div class="card" style="border-style:dashed; margin-top:16px;">
+          <h2 class="section-title">🧪 Testing tools</h2>
+          <p class="muted">Skip the manual typing — auto-fill guesses so you can try both grid sizes.</p>
+          <button class="btn btn-ghost btn-block test-tool-btn" data-action="seedTopics">🧪 Auto-fill guesses (up to 24, unlocks 5×5)</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function personalBoard(session){
+    const n = session.gridSize;
+    const order = seededShuffle(session.pool, session.id + ':' + state.identity.id);
+    const cells = [];
+    const total = n*n;
+    const center = Math.floor(total/2);
+    let oi = 0;
+    for(let i=0;i<total;i++){
+      if(n % 2 === 1 && i === center){ cells.push({free:true}); }
+      else { cells.push({topicId: order[oi++]}); }
+    }
+    return cells;
+  }
+
+  function topicText(session, id){
+    const t = (session.topics||[]).find(t=>t.id===id);
+    return t ? t.text : '?';
+  }
+
+  function viewPlay(){
+    const s = state.session;
+    if(!s) return viewGroupHome();
+    const isHost = state.identity && s.hostId === state.identity.id;
+    const cells = personalBoard(s);
+    const n = s.gridSize;
+    return `
+      ${marquee(s.name)}
+      <div class="wrap">
+        <div class="tabs">
+          <div class="tab ${state.playTab==='board'?'active':''}" data-action="setPlayTab" data-tab="board">🎯 My Board</div>
+          <div class="tab ${state.playTab==='leaderboard'?'active':''}" data-action="setPlayTab" data-tab="leaderboard">🏅 Top Topics</div>
+          <div class="tab ${state.playTab==='guessers'?'active':''}" data-action="setPlayTab" data-tab="guessers">🙋 Top Guessers</div>
+        </div>
+
+        ${state.playTab==='board' ? `
+          <p class="muted center" style="margin-top:0;">Tap a square every time that topic pops up. Everyone's board syncs the tally.</p>
+          <div class="board-wrap">
+            <div class="board" style="grid-template-columns:repeat(${n}, 1fr);">
+              ${cells.map(c => renderCell(s, c)).join('')}
+            </div>
+          </div>
+        ` : state.playTab==='leaderboard' ? renderLeaderboardBlock(s) : renderGuesserLeaderboardBlock(s)}
+
+        ${isHost ? `<button class="btn btn-primary btn-block" data-action="confirmEnd">🔔 End this meetup &amp; lock the tally</button>` : ''}
+
+        <div class="card" style="border-style:dashed; margin-top:16px;">
+          <h2 class="section-title">🧪 Testing tools</h2>
+          <p class="muted">Simulate a room full of people tapping, instead of clicking 20 squares yourself.</p>
+          <button class="btn btn-ghost btn-block test-tool-btn" data-action="simulateTaps">🧪 Simulate some crowd tapping</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderCell(session, c){
+    if(c.free){
+      return `<div class="cell free">⭐<br>FREE</div>`;
+    }
+    const count = (session.counts && session.counts[c.topicId]) || 0;
+    const text = topicText(session, c.topicId);
+    const daubers = [];
+    const show = Math.min(count, 4);
+    for(let i=0;i<show;i++){
+      const rot = (i*47 + (hashStr(c.topicId)()%40)) % 360;
+      const cls = i % 2 === 0 ? '' : 'gold';
+      daubers.push(`<div class="dauber ${cls}" style="--rot:${rot}deg; transform:rotate(${rot}deg) scale(${1 - i*0.08});"></div>`);
+    }
+    return `
+      <button class="cell" data-action="tallyUp" data-topic="${esc(c.topicId)}" aria-label="${esc(text)} — tallied ${count} time${count===1?'':'s'}. Tap to add one.">
+        ${daubers.join('')}
+        <span class="txt">${esc(text)}</span>
+        ${count>0 ? `<span class="count-badge">${count}</span>` : ''}
+        ${count>0 ? `<span class="minus-btn" data-action="tallyDown" data-topic="${esc(c.topicId)}" aria-label="Remove one tally from ${esc(text)}">−</span>` : ''}
+      </button>
+    `;
+  }
+
+  function renderLeaderboardBlock(s){
+    const rows = (s.topics||[]).filter(t => (s.pool||[]).includes(t.id))
+      .map(t=>({text:t.text, count:(s.counts&&s.counts[t.id])||0}))
+      .sort((a,b)=>b.count-a.count);
+    if(!rows.length) return `<div class="empty-state">No tallies yet — the floor is quiet... for now.</div>`;
+    return `
+      <ul class="leaderboard">
+        ${rows.map((r,i)=>`
+          <li>
+            <span class="rank">${i+1}</span>
+            <span class="lb-text">${esc(r.text)}</span>
+            <span class="lb-count">×${r.count}</span>
+          </li>`).join('')}
+      </ul>
+    `;
+  }
+
+  function computeGuesserScores(session){
+    const byName = {};
+    (session.topics||[]).filter(t => (session.pool||[]).includes(t.id)).forEach(t=>{
+      const name = t.submittedBy || 'Unknown';
+      const count = (session.counts && session.counts[t.id]) || 0;
+      if(!byName[name]) byName[name] = { name, score: 0, guesses: 0 };
+      byName[name].score += count;
+      byName[name].guesses += 1;
+    });
+    return Object.values(byName).sort((a,b)=> b.score - a.score || a.name.localeCompare(b.name));
+  }
+
+  function renderGuesserLeaderboardBlock(s){
+    const rows = computeGuesserScores(s);
+    if(!rows.length) return `<div class="empty-state">No guesses on the board yet.</div>`;
+    return `
+      <ul class="leaderboard">
+        ${rows.map((r,i)=>`
+          <li>
+            <span class="rank">${i+1}</span>
+            <span class="lb-text">${esc(r.name)} <span class="muted">(${r.guesses} guess${r.guesses===1?'':'es'})</span></span>
+            <span class="lb-count">${r.score} pt${r.score===1?'':'s'}</span>
+          </li>`).join('')}
+      </ul>
+    `;
+  }
+
+  function viewResults(){
+    const s = state.session;
+    if(!s) return viewGroupHome();
+    const rows = (s.topics||[]).filter(t => (s.pool||[]).includes(t.id))
+      .map(t=>({text:t.text, count:(s.counts&&s.counts[t.id])||0}))
+      .sort((a,b)=>b.count-a.count);
+    const top = rows[0];
+    const total = rows.reduce((a,r)=>a+r.count,0);
+    return `
+      ${marquee('Session Recap')}
+      <div class="wrap">
+        ${top && top.count>0 ? `
+          <div class="hero-callout">
+            <div class="muted" style="color:var(--cream-dark);">MOST POPPED TOPIC</div>
+            <div class="big">${esc(top.text)}</div>
+            <div>came up <strong>${top.count}</strong> time${top.count===1?'':'s'}</div>
+          </div>
+        ` : `<div class="empty-state">Nobody tallied anything this round — quiet meetup!</div>`}
+
+        <div class="card">
+          <h2 class="section-title">Final tally · ${total} total pops</h2>
+          <ul class="leaderboard">
+            ${rows.map((r,i)=>`
+              <li>
+                <span class="rank">${i+1}</span>
+                <span class="lb-text">${esc(r.text)}</span>
+                <span class="lb-count">×${r.count}</span>
+              </li>`).join('')}
+          </ul>
+        </div>
+
+        <div class="card">
+          <h2 class="section-title">🙋 Top Guessers</h2>
+          <p class="muted">Points come from the topics each person called — most tallied wins.</p>
+          ${renderGuesserLeaderboardBlock(s)}
+        </div>
+
+        <div class="row">
+          <button class="btn btn-ghost" data-action="backToGroup">← Back to group</button>
+          <button class="btn btn-gold" data-action="viewHallOfFame">🏆 All-time Hall of Fame</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function viewHallOfFame(){
+    const data = state.hofData;
+    return `
+      ${marquee((state.group?state.group.name:'') + ' — Hall of Fame')}
+      <div class="wrap">
+        <div class="card">
+          <h2 class="section-title">🏆 All-time top topics</h2>
+          ${!data ? `<div class="empty-state">Tallying up the history…</div>` :
+            !data.topics.length ? `<div class="empty-state">No tallies recorded yet.</div>` :
+            `<ul class="leaderboard">
+              ${data.topics.slice(0,15).map((t,i)=>`
+                <li>
+                  <span class="rank">${i+1}</span>
+                  <span class="lb-text">${esc(t.text)} <span class="muted">(${t.sessions} meetup${t.sessions===1?'':'s'})</span></span>
+                  <span class="lb-count">×${t.total}</span>
+                </li>`).join('')}
+            </ul>`
+          }
+        </div>
+        <div class="card">
+          <h2 class="section-title">Meetup history</h2>
+          ${!data ? '' : !data.sessions.length ? `<div class="empty-state">No meetups yet.</div>` :
+            `<div class="stack">${data.sessions.map(s=>{
+              const top = topTopicOf(s);
+              const phaseLabel = s.phase === 'setup' ? '🟡 Setting up' : s.phase === 'playing' ? '🟢 Live now' : '⚪ Wrapped';
+              return `<div class="ticket" style="cursor:pointer;" data-action="openSession" data-session="${esc(s.id)}">
+                <div style="display:flex; justify-content:space-between;">
+                  <strong>${esc(s.name)}</strong><span class="muted">${phaseLabel}</span>
+                </div>
+                <div class="muted">${fmtDate(s.createdAt)}${top?' · Top pick: '+esc(top):''}</div>
+              </div>`;
+            }).join('')}</div>`
+          }
+        </div>
+        <button class="btn btn-ghost btn-block" data-action="backToGroup">← Back to group</button>
+      </div>
+    `;
+  }
+
+  /* ===================== Event delegation ===================== */
+  app.addEventListener('click', async function(e){
+    const el = e.target.closest('[data-action]');
+    if(!el) return;
+    // A modal-overlay's own action (closing on backdrop click) should only fire
+    // when the backdrop itself was clicked, not when a click inside the modal
+    // card bubbled up to it.
+    if(el.classList.contains('modal-overlay') && e.target !== el) return;
+    const action = el.getAttribute('data-action');
+
+    if(action === 'setName'){
+      const val = document.getElementById('nameInput').value;
+      if(!normTopic(val)){ toast('Give us a name to write on the ticket'); return; }
+      await saveIdentity(val);
+      if(state.session) await ensureParticipant(state.session);
+      render();
+    }
+    else if(action === 'createGroup'){
+      const val = document.getElementById('newGroupName').value;
+      if(!state.identity){ toast('Enter your name first'); render(); return; }
+      await createGroup(val);
+    }
+    else if(action === 'joinGroup'){
+      const val = document.getElementById('joinGroupCode').value;
+      await joinGroup(val);
+    }
+    else if(action === 'newSessionPrompt'){
+      state.showNewSessionModal = true;
+      render();
+    }
+    else if(action === 'confirmNewSession'){
+      const input = document.getElementById('newSessionNameInput');
+      const val = input ? input.value : '';
+      state.showNewSessionModal = false;
+      await createSession(val);
+    }
+    else if(action === 'cancelNewSession'){
+      state.showNewSessionModal = false;
+      render();
+    }
+    else if(action === 'copyLink'){
+      const link = el.getAttribute('data-link');
+      try{
+        await navigator.clipboard.writeText(link);
+        toast('Link copied!');
+      }catch(err){ toast('Copy this: ' + link); }
+    }
+    else if(action === 'openSession'){
+      await openSession(el.getAttribute('data-session'));
+    }
+    else if(action === 'addTopic'){
+      const input = document.getElementById('topicInput');
+      const val = input.value;
+      input.value = '';
+      await addTopic(val);
+    }
+    else if(action === 'startGame'){
+      await startGame();
+    }
+    else if(action === 'setPlayTab'){
+      state.playTab = el.getAttribute('data-tab');
+      render();
+    }
+    else if(action === 'tallyUp'){
+      await tally(el.getAttribute('data-topic'), 1);
+    }
+    else if(action === 'tallyDown'){
+      e.stopPropagation();
+      await tally(el.getAttribute('data-topic'), -1);
+    }
+    else if(action === 'goHome'){
+      goHome();
+    }
+    else if(action === 'confirmEnd'){
+      state.showEndConfirm = true;
+      render();
+    }
+    else if(action === 'doEndSession'){
+      state.showEndConfirm = false;
+      await endSession();
+    }
+    else if(action === 'cancelEndConfirm'){
+      state.showEndConfirm = false;
+      render();
+    }
+    else if(action === 'backToGroup'){
+      state.sessionId = null;
+      state.session = null;
+      await refreshGroup();
+      state.view = 'groupHome';
+      updateUrl();
+      render();
+    }
+    else if(action === 'viewHallOfFame'){
+      state.view = 'halloffame';
+      render();
+      await loadHallOfFame();
+      render();
+    }
+    else if(action === 'toggleIdentityPanel'){
+      state.recentIdentities = await getRecentIdentities();
+      // make sure current identity is represented even if not yet in the recent list
+      if(state.identity && !state.recentIdentities.some(p=>p.id===state.identity.id)){
+        state.recentIdentities.unshift({id: state.identity.id, name: state.identity.name});
+      }
+      state.showIdentityPanel = true;
+      render();
+    }
+    else if(action === 'closeIdentityPanel'){
+      state.showIdentityPanel = false;
+      render();
+    }
+    else if(action === 'useIdentity'){
+      await switchToIdentity(el.getAttribute('data-id'), el.getAttribute('data-name'));
+    }
+    else if(action === 'newIdentity'){
+      const val = document.getElementById('newIdentityName').value;
+      if(!normTopic(val)){ toast('Give the new tester a name'); return; }
+      await switchToIdentity(uid(), normTopic(val).slice(0,30));
+    }
+    else if(action === 'loadDemo'){
+      await loadDemo();
+    }
+    else if(action === 'seedTopics'){
+      await addSampleTopics();
+    }
+    else if(action === 'simulateTaps'){
+      await simulateTaps();
+    }
+  });
+
+  // Enter-to-submit for text inputs
+  app.addEventListener('keydown', function(e){
+    if(e.key !== 'Enter') return;
+    if(e.target.id === 'topicInput'){ e.preventDefault(); document.querySelector('[data-action="addTopic"]').click(); }
+    if(e.target.id === 'newGroupName'){ e.preventDefault(); document.querySelector('[data-action="createGroup"]').click(); }
+    if(e.target.id === 'joinGroupCode'){ e.preventDefault(); document.querySelector('[data-action="joinGroup"]').click(); }
+    if(e.target.id === 'nameInput'){ e.preventDefault(); document.querySelector('[data-action="setName"]').click(); }
+    if(e.target.id === 'newSessionNameInput'){ e.preventDefault(); document.querySelector('[data-action="confirmNewSession"]').click(); }
+  });
+
+  init();
+
+})();
+</script>
+</body>
+</html>
