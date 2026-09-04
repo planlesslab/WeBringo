@@ -18,7 +18,8 @@
     --gold-dark:#C9930A;
     --green:#1E7A5F;
     --ink:#241A14;
-    --muted:#8A7860;
+    --silver:#8A7860;
+    --bronze:#E3B27A;
     --shadow: 0 6px 0 rgba(36,26,20,0.12);
   }
   *{box-sizing:border-box;}
@@ -45,8 +46,7 @@
 
   /* ---------- Marquee header ---------- */
   .marquee{
-    background:
-      repeating-linear-gradient(45deg, var(--tent-red) 0 18px, var(--tent-red-dark) 18px 36px);
+    background: var(--tent-red);
     padding:22px 20px 26px;
     position:relative;
     border-bottom:6px solid var(--gold);
@@ -162,7 +162,7 @@
   .btn-gold{background:var(--gold); color:var(--ink); border-color:var(--gold-dark); box-shadow:0 3px 0 var(--gold-dark);}
   .btn-ghost{background:var(--cream); color:var(--tent-red); border-color:var(--tent-red);}
   .btn-green{background:var(--green); color:var(--cream); border-color:#124F3F; box-shadow:0 3px 0 #124F3F;}
-  .btn[disabled]{opacity:0.45; cursor:not-allowed; box-shadow:none; transform:none;}
+  .btn[disabled]{background:var(--silver); color:var(--cream); border-color:var(--silver); opacity:1; cursor:not-allowed; box-shadow:none; transform:none;}
   .btn-block{width:100%;}
   .btn-sm{padding:8px 14px; font-size:0.8rem;}
 
@@ -178,7 +178,7 @@
     border-radius:8px;
     border:2px solid var(--gold-dark);
   }
-  .muted{color:var(--muted); font-size:0.85rem;}
+  .muted{color:var(--silver); font-size:0.85rem;}
   .center{text-align:center;}
   .stack{display:flex; flex-direction:column; gap:10px;}
 
@@ -192,7 +192,7 @@
     font-weight:700;
     margin:3px 4px 3px 0;
   }
-  .chip.host::after{content:" ★ host";}
+  .chip.host::before{content:"★ "; color:var(--gold); font-weight:800;}
 
   .qr-box{
     text-align:center;
@@ -207,7 +207,7 @@
   .empty-state{
     text-align:center;
     padding:22px 10px;
-    color:var(--muted);
+    color:var(--silver);
     font-style:italic;
   }
 
@@ -221,7 +221,7 @@
     display:flex; justify-content:space-between; align-items:center; gap:8px;
     font-size:0.9rem;
   }
-  .topic-list li small{color:var(--muted); white-space:nowrap;}
+  .topic-list li small{color:var(--silver); white-space:nowrap;}
 
   .toast{
     position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
@@ -237,7 +237,7 @@
     flex:1; text-align:center; padding:10px; border-radius:8px 8px 0 0;
     font-weight:800; font-size:0.85rem; cursor:pointer;
     background:var(--cream-dark); border:2px solid var(--gold-dark); border-bottom:none;
-    color:var(--muted);
+    color:var(--ink);
   }
   .tab.active{background:var(--cream); color:var(--tent-red);}
 
@@ -317,12 +317,12 @@
   }
   .leaderboard li:nth-child(1) .rank{background:var(--gold); color:var(--ink);}
   .leaderboard li:nth-child(2) .rank{background:#D8D8D8;}
-  .leaderboard li:nth-child(3) .rank{background:#E3B27A;}
+  .leaderboard li:nth-child(3) .rank{background:var(--bronze);}
   .lb-text{flex:1;}
   .lb-count{font-family:'Space Mono', monospace; font-weight:700; color:var(--tent-red);}
 
   .hero-callout{
-    background: repeating-linear-gradient(45deg, var(--tent-red) 0 14px, var(--tent-red-dark) 14px 28px);
+    background: var(--tent-red);
     color:var(--cream); border-radius:12px; padding:20px; text-align:center; margin-bottom:16px;
     border:3px solid var(--gold);
   }
@@ -334,7 +334,7 @@
   }
   .modal{background:var(--cream); border:3px solid var(--gold); border-radius:14px; padding:24px; max-width:360px; width:100%;}
 
-  .footer-note{text-align:center; color:var(--muted); font-size:0.75rem; padding:16px;}
+  .footer-note{text-align:center; color:var(--silver); font-size:0.75rem; padding:16px;}
 
   .test-bar{
     position:fixed; left:10px; bottom:10px; z-index:600;
@@ -450,6 +450,39 @@
   }
   function normTopic(t){ return t.trim().replace(/\s+/g,' '); }
   function normKey(t){ return normTopic(t).toLowerCase(); }
+  // Two exact-match guesses (e.g. "Someone falls asleep" submitted by two
+  // different people) become ONE board item instead of two. Every original
+  // submitter is kept, so each of them still scores fully from that item's
+  // tally — they just no longer take up two separate squares on the board.
+  function mergeTopics(rawTopics){
+    const map = new Map();
+    const merged = [];
+    (rawTopics||[]).forEach(t=>{
+      const key = normKey(t.text);
+      let m = map.get(key);
+      if(!m){
+        m = { id: t.id, text: t.text, submitters: [] };
+        map.set(key, m);
+        merged.push(m);
+      }
+      const names = (t.submitters && t.submitters.length) ? t.submitters : [t.submittedBy || 'Unknown'];
+      names.forEach(name => m.submitters.push(name));
+    });
+    return merged;
+  }
+  // Standard competition ranking: rows already sorted desc by `key` get a shared
+  // rank when their value ties (e.g. counts 5,3,3,3,1 -> ranks 1,2,2,2,5), rather
+  // than every row getting a distinct rank purely by list position.
+  function assignRanks(rows, key){
+    let rank = 0, lastVal = null;
+    return rows.map((r, i) => {
+      if(lastVal === null || r[key] !== lastVal){
+        rank = i + 1;
+        lastVal = r[key];
+      }
+      return Object.assign({}, r, { rank });
+    });
+  }
   function hashStr(str){
     let h = 1779033703 ^ str.length;
     for(let i=0;i<str.length;i++){
@@ -477,6 +510,17 @@
     const a = arr.slice();
     for(let i=a.length-1;i>0;i--){
       const j = Math.floor(rnd()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+  // Genuinely random shuffle (Math.random-backed) — used for one-time picks like
+  // choosing which topics make the board, so a session with more guesses than the
+  // board needs doesn't always land on the same subset.
+  function randomShuffle(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
       [a[i],a[j]] = [a[j],a[i]];
     }
     return a;
@@ -650,7 +694,7 @@
       counts: {},
       participants: members,
       gridSize: null,
-      pool: null,
+      boards: {},
     };
     const ok1 = await sSet('session:'+id, session, true);
     if(!ok1) return false;
@@ -671,6 +715,7 @@
     if(!session){ toast('Session not found'); return; }
     state.sessionId = id;
     state.session = await ensureParticipant(session);
+    state.session = await ensureBoardAssignment(state.session);
     state.view = session.phase === 'setup' ? 'lobby' : session.phase === 'playing' ? 'play' : 'results';
     updateUrl();
     render();
@@ -688,32 +733,80 @@
     if(!text){ return; }
     if(text.length > 80) text = text.slice(0,80);
     const fresh = await refreshSession() || state.session;
-    fresh.topics.push({ id: uid(), text, submittedBy: state.identity.name });
+    const key = normKey(text);
+    const existing = fresh.topics.find(t => normKey(t.text) === key);
+    if(existing){
+      if(!existing.submitters) existing.submitters = existing.submittedBy ? [existing.submittedBy] : [];
+      delete existing.submittedBy;
+      if(existing.submitters.includes(state.identity.name)){
+        toast("You've already called that one — no need to call it twice 🎟️");
+        render();
+        return;
+      }
+      existing.submitters.push(state.identity.name);
+      toast('Someone already called that — you\'re now both on the hook for it 🎟️');
+    } else {
+      fresh.topics.push({ id: uid(), text, submitters: [state.identity.name] });
+      toast('Guess added to the pot 🎟️');
+    }
     await sSet('session:'+fresh.id, fresh, true);
     state.session = fresh;
-    toast('Guess added to the pot 🎟️');
     render();
   }
 
   function pickGridSize(count){
-    if(count >= 25) return 5;
-    if(count >= 9) return 3;
-    return 0;
+    if(count < 9) return 0;
+    return Math.floor(Math.sqrt(count));
+  }
+
+  // Picks a fresh random n×n subset of topics for one participant's board.
+  // Each participant gets their own independent random draw, so when guesses
+  // exceed the grid size, different players can end up with different items.
+  function assignBoardIds(session, participantId){
+    if(!session.boards) session.boards = {};
+    const n = session.gridSize;
+    const needed = n * n;
+    const existing = session.boards[participantId];
+    if(existing && existing.length === needed) return existing;
+    const merged = mergeTopics(session.topics);
+    const ids = randomShuffle(merged).slice(0, needed).map(t => t.id);
+    session.boards[participantId] = ids;
+    return ids;
+  }
+
+  // Makes sure the current identity has a board for this session, assigning
+  // and persisting one if they don't have it yet (e.g. they joined after the
+  // host started, or are opening the play screen for the first time).
+  async function ensureBoardAssignment(session){
+    if(!session || session.phase !== 'playing' || !state.identity) return session;
+    const n = session.gridSize;
+    const needed = n * n;
+    const existing = session.boards && session.boards[state.identity.id];
+    if(existing && existing.length === needed) return session;
+    assignBoardIds(session, state.identity.id);
+    await sSet('session:'+session.id, session, true);
+    return session;
+  }
+
+  // A topic only "counts" for leaderboards/scoring once it has actually
+  // landed on at least one participant's board.
+  function inPlayTopicIds(session){
+    const set = new Set();
+    if(session && session.boards){
+      Object.values(session.boards).forEach(ids => { (ids||[]).forEach(id => set.add(id)); });
+    }
+    return set;
   }
 
   async function startGame(){
     const fresh = await refreshSession() || state.session;
-    const n = pickGridSize(fresh.topics.length);
-    if(!n){ toast('Need at least 8 guesses to start'); render(); return; }
-    const needed = n*n;
-    const pool = seededShuffle(fresh.topics, fresh.id).slice(0, needed).map(t=>t.id);
+    const n = pickGridSize(mergeTopics(fresh.topics).length);
+    if(!n){ toast('Need at least 9 distinct guesses to start'); render(); return; }
     fresh.gridSize = n;
-    fresh.pool = pool;
     fresh.phase = 'playing';
     fresh.startedAt = Date.now();
-    const counts = fresh.counts || {};
-    pool.forEach(id=>{ if(!(id in counts)) counts[id] = 0; });
-    fresh.counts = counts;
+    fresh.boards = fresh.boards || {};
+    assignBoardIds(fresh, state.identity.id); // host's own board, picked fresh right now
     await sSet('session:'+fresh.id, fresh, true);
     state.session = fresh;
     state.view = 'play';
@@ -750,7 +843,7 @@
     for(const topicText of SAMPLE_TOPICS){
       if(added >= need) break;
       if(existingKeys.has(normKey(topicText))) continue;
-      fresh.topics.push({ id: uid(), text: topicText, submittedBy: SAMPLE_NAMES[si % SAMPLE_NAMES.length] });
+      fresh.topics.push({ id: uid(), text: topicText, submitters: [SAMPLE_NAMES[si % SAMPLE_NAMES.length]] });
       si++; added++;
     }
     const ok = await sSet('session:'+fresh.id, fresh, true);
@@ -763,9 +856,10 @@
 
   async function simulateTaps(){
     const fresh = await refreshSession() || state.session;
-    if(!fresh.pool || !fresh.pool.length){ toast('Start the game first'); render(); return; }
+    const idsInPlay = Array.from(inPlayTopicIds(fresh));
+    if(!idsInPlay.length){ toast('Start the game first'); render(); return; }
     fresh.counts = fresh.counts || {};
-    const shuffled = seededShuffle(fresh.pool, 'sim-' + Date.now());
+    const shuffled = seededShuffle(idsInPlay, 'sim-' + Date.now());
     const hitCount = Math.min(shuffled.length, 3 + Math.floor(Math.random()*4));
     for(let i=0;i<hitCount;i++){
       const id = shuffled[i];
@@ -859,6 +953,9 @@
           if(session){
             state.sessionId = s;
             state.session = session;
+            if(state.identity && state.identity.name){
+              state.session = await ensureBoardAssignment(state.session);
+            }
             state.view = session.phase === 'setup' ? 'lobby' : session.phase === 'playing' ? 'play' : 'results';
           }
         }
@@ -876,7 +973,10 @@
         const before = JSON.stringify(state.session);
         const s = await refreshSession();
         if(s){
-          if(s.phase === 'playing' && state.view === 'lobby') state.view = 'play';
+          if(s.phase === 'playing' && state.view === 'lobby'){
+            state.view = 'play';
+            state.session = await ensureBoardAssignment(s);
+          }
           if(s.phase === 'ended' && (state.view === 'lobby' || state.view === 'play')) state.view = 'results';
           if(JSON.stringify(s) !== before) softRender();
         }
@@ -1127,8 +1227,11 @@
     if(!s) return viewGroupHome();
     const link = shareLink(state.groupCode, s.id);
     const isHost = state.identity && s.hostId === state.identity.id;
-    const n = pickGridSize(s.topics.length);
-    const need = n ? null : (s.topics.length < 8 ? 8 - s.topics.length : 0);
+    const merged = mergeTopics(s.topics);
+    const distinctCount = merged.length;
+    const totalSubmissions = merged.reduce((sum,t)=> sum + t.submitters.length, 0);
+    const n = pickGridSize(distinctCount);
+    const need = n ? null : (distinctCount < 9 ? 9 - distinctCount : 0);
     return `
       ${marquee(s.name)}
       <div class="wrap">
@@ -1138,13 +1241,18 @@
         </div>
 
         <div class="card">
-          <h2 class="section-title">📝 Call your shots</h2>
-          <p class="muted">Everyone throws in guesses for what'll come up this session. Need 8+ for a board (24+ unlocks a big 5×5).</p>
+          <h2 class="section-title">📝 Call your shots <span style="font-family:'Space Mono', monospace; font-weight:700; font-size:0.85rem; color:var(--tent-red);">(${distinctCount} distinct${totalSubmissions !== distinctCount ? ' · '+totalSubmissions+' submitted' : ''})</span></h2>
+          <p class="muted">Everyone throws in guesses for what'll come up this session. Need 9+ distinct guesses for a board — exact repeats combine into one item and everyone who called it still scores from it. The grid grows to fit (9→3×3, 16→4×4, 25→5×5, and beyond).</p>
           <div class="row" style="margin-bottom:12px;">
             <input type="text" id="topicInput" placeholder="e.g. Someone brings up the weather" maxlength="80">
             <button class="btn btn-primary" data-action="addTopic" style="flex:0 0 auto;">Add</button>
           </div>
-          ${s.topics.length ? `<ul class="topic-list">${s.topics.slice().reverse().map(t=>`<li><span>${esc(t.text)}</span><small>${esc(t.submittedBy)}</small></li>`).join('')}</ul>` : '<div class="empty-state">The pot is empty — toss in the first guess.</div>'}
+          ${s.topics.length ? `<ul class="topic-list">${s.topics.slice().reverse().map(t=>{
+            const rawNames = (t.submitters && t.submitters.length) ? t.submitters : [t.submittedBy || 'Unknown'];
+            const names = Array.from(new Set(rawNames));
+            const tag = names.length>1 ? ` <span class="mono" style="color:var(--tent-red); font-size:0.72rem;">(${names.length} people called this)</span>` : '';
+            return `<li><span>${esc(t.text)}${tag}</span><small>${esc(names.join(', '))}</small></li>`;
+          }).join('')}</ul>` : '<div class="empty-state">The pot is empty — toss in the first guess.</div>'}
         </div>
 
         <div class="ticket center">
@@ -1177,8 +1285,8 @@
   }
 
   function personalBoard(session){
-    const order = seededShuffle(session.pool, session.id + ':' + state.identity.id);
-    return order.map(topicId => ({topicId}));
+    const ids = (session.boards && session.boards[state.identity.id]) || [];
+    return ids.map(topicId => ({topicId}));
   }
 
   function topicText(session, id){
@@ -1258,15 +1366,16 @@
   }
 
   function renderLeaderboardBlock(s){
-    const rows = (s.topics||[]).filter(t => (s.pool||[]).includes(t.id))
+    const inPlay = inPlayTopicIds(s);
+    const rows = assignRanks(mergeTopics(s.topics).filter(t => inPlay.has(t.id))
       .map(t=>({text:t.text, count:(s.counts&&s.counts[t.id])||0}))
-      .sort((a,b)=>b.count-a.count);
+      .sort((a,b)=>b.count-a.count), 'count');
     if(!rows.length) return `<div class="empty-state">No tallies yet — the floor is quiet... for now.</div>`;
     return `
       <ul class="leaderboard">
-        ${rows.map((r,i)=>`
+        ${rows.map((r)=>`
           <li>
-            <span class="rank">${i+1}</span>
+            <span class="rank">${r.rank}</span>
             <span class="lb-text">${esc(r.text)}</span>
             <span class="lb-count">×${r.count}</span>
           </li>`).join('')}
@@ -1275,15 +1384,20 @@
   }
 
   function computeGuesserScores(session){
+    const inPlay = inPlayTopicIds(session);
+    const merged = mergeTopics(session.topics);
     const byName = {};
-    (session.topics||[]).filter(t => (session.pool||[]).includes(t.id)).forEach(t=>{
-      const name = t.submittedBy || 'Unknown';
+    merged.filter(t => inPlay.has(t.id)).forEach(t=>{
       const count = (session.counts && session.counts[t.id]) || 0;
-      if(!byName[name]) byName[name] = { name, score: 0, guesses: 0 };
-      byName[name].score += count;
-      byName[name].guesses += 1;
+      const uniqueSubmitters = Array.from(new Set(t.submitters));
+      uniqueSubmitters.forEach(name=>{
+        if(!byName[name]) byName[name] = { name, score: 0, guesses: 0 };
+        byName[name].score += count;
+        byName[name].guesses += 1;
+      });
     });
-    return Object.values(byName).sort((a,b)=> b.score - a.score || a.name.localeCompare(b.name));
+    const sorted = Object.values(byName).sort((a,b)=> b.score - a.score || a.name.localeCompare(b.name));
+    return assignRanks(sorted, 'score');
   }
 
   function renderGuesserLeaderboardBlock(s){
@@ -1291,9 +1405,9 @@
     if(!rows.length) return `<div class="empty-state">No guesses on the board yet.</div>`;
     return `
       <ul class="leaderboard">
-        ${rows.map((r,i)=>`
+        ${rows.map((r)=>`
           <li>
-            <span class="rank">${i+1}</span>
+            <span class="rank">${r.rank}</span>
             <span class="lb-text">${esc(r.name)} <span class="muted">(${r.guesses} guess${r.guesses===1?'':'es'})</span></span>
             <span class="lb-count">${r.score} pt${r.score===1?'':'s'}</span>
           </li>`).join('')}
@@ -1304,28 +1418,38 @@
   function viewResults(){
     const s = state.session;
     if(!s) return viewGroupHome();
-    const rows = (s.topics||[]).filter(t => (s.pool||[]).includes(t.id))
+    const inPlay = inPlayTopicIds(s);
+    const rows = assignRanks(mergeTopics(s.topics).filter(t => inPlay.has(t.id))
       .map(t=>({text:t.text, count:(s.counts&&s.counts[t.id])||0}))
-      .sort((a,b)=>b.count-a.count);
-    const top = rows[0];
+      .sort((a,b)=>b.count-a.count), 'count');
+    const topCount = rows.length ? rows[0].count : 0;
+    const tiedTop = rows.filter(r => r.count === topCount);
     const total = rows.reduce((a,r)=>a+r.count,0);
     return `
       ${marquee('Session Recap')}
       <div class="wrap">
-        ${top && top.count>0 ? `
-          <div class="hero-callout">
-            <div class="muted" style="color:var(--cream-dark);">MOST POPPED TOPIC</div>
-            <div class="big">${esc(top.text)}</div>
-            <div>came up <strong>${top.count}</strong> time${top.count===1?'':'s'}</div>
-          </div>
-        ` : `<div class="empty-state">Nobody tallied anything this round — quiet meetup!</div>`}
+        ${topCount>0 ? (
+          tiedTop.length > 1 ? `
+            <div class="hero-callout">
+              <div class="muted" style="color:var(--cream-dark);">MOST POPPED TOPIC</div>
+              <div class="big">IT'S A TIE!</div>
+              <div>${tiedTop.length} topics each came up <strong>${topCount}</strong> time${topCount===1?'':'s'}</div>
+            </div>
+          ` : `
+            <div class="hero-callout">
+              <div class="muted" style="color:var(--cream-dark);">MOST POPPED TOPIC</div>
+              <div class="big">${esc(tiedTop[0].text)}</div>
+              <div>came up <strong>${topCount}</strong> time${topCount===1?'':'s'}</div>
+            </div>
+          `
+        ) : `<div class="empty-state">Nobody tallied anything this round — quiet meetup!</div>`}
 
         <div class="card">
           <h2 class="section-title">Final tally · ${total} total pops</h2>
           <ul class="leaderboard">
-            ${rows.map((r,i)=>`
+            ${rows.map((r)=>`
               <li>
-                <span class="rank">${i+1}</span>
+                <span class="rank">${r.rank}</span>
                 <span class="lb-text">${esc(r.text)}</span>
                 <span class="lb-count">×${r.count}</span>
               </li>`).join('')}
@@ -1400,6 +1524,7 @@
       if(!normTopic(val)){ toast('Give us a name to write on the ticket'); return; }
       await saveIdentity(val);
       if(state.session) await ensureParticipant(state.session);
+      if(state.session) state.session = await ensureBoardAssignment(state.session);
       if(state.group) state.group = await ensureGroupMember(state.group);
       render();
     }
