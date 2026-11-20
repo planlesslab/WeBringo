@@ -1,0 +1,32 @@
+{
+  "rules": {
+    "rooms": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && ((!data.exists() && newData.child('hostId').val() === auth.uid) || (data.exists() && data.child('hostId').val() === auth.uid))",
+        ".validate": "$code.matches(/^[A-Z]{4}$/)",
+
+        "hostId": {
+          ".write": "auth != null && newData.val() === auth.uid && data.parent().child('players/' + auth.uid + '/online').val() === true && data.parent().child('players/' + data.val() + '/online').val() !== true"
+        },
+        "size": { ".validate": "newData.val() === 3 || newData.val() === 4 || newData.val() === 5" },
+        "rule": { ".validate": "newData.val() === 'line' || newData.val() === 'full'" },
+
+        "players": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && data.parent().parent().child('hostId').exists()",
+            "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 16" },
+            "card": {
+              "$i": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 40" }
+            },
+            "counts": {
+              "$i": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 999" }
+            },
+            "score": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 99999" },
+            "bingoAt": { ".validate": "newData.isNumber()" }
+          }
+        }
+      }
+    }
+  }
+}
