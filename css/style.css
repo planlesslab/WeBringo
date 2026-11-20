@@ -116,6 +116,8 @@ button, input, textarea { font: inherit; color: inherit; }
   font-size: 13px; text-align: center; padding: 7px 12px;
 }
 
+.banner.bad { background: rgba(226, 87, 122, 0.95); color: #fff; font-size: 14px; padding: 10px 14px; }
+
 .glass {
   background: var(--flutes), var(--glass);
   border: 1px solid var(--glass-edge);
