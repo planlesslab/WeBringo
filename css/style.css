@@ -119,7 +119,7 @@ button, input, textarea { font: inherit; color: inherit; }
 .banner.bad { background: rgba(226, 87, 122, 0.95); color: #fff; font-size: 14px; padding: 10px 14px; }
 
 .glass {
-  background: var(--flutes), var(--glass);
+  background: rgba(255, 255, 255, 0.62);
   border: 1px solid var(--glass-edge);
   box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   -webkit-backdrop-filter: blur(14px) saturate(1.2);
@@ -137,9 +137,9 @@ button, input, textarea { font: inherit; color: inherit; }
   box-shadow: 0 0 18px rgba(255, 246, 214, 0.9);
 }
 .mark .t { width: 22px; height: 22px; border-radius: 6px; display: block; }
-.mark .t.b { background: var(--flutes), linear-gradient(135deg, #a9bcff, #6f8cf8); box-shadow: 0 0 10px rgba(110, 140, 255, 0.8); }
-.mark .t.l { background: var(--flutes), linear-gradient(135deg, #f1e2fa, #d6b9ef); }
-.mark .t.y { background: var(--flutes), linear-gradient(135deg, #fbefc4, #f0d27a); }
+.mark .t.b { background: #7d98ff; box-shadow: 0 0 10px rgba(110, 140, 255, 0.8); }
+.mark .t.l { background: #e2c9f4; }
+.mark .t.y { background: #f5dc8c; }
 .logo { margin: 0; font-size: clamp(42px, 12vw, 60px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
 .logo span {
   background: linear-gradient(90deg, #5b7cfa, #a68be8 55%, #e3b64f);
@@ -164,7 +164,7 @@ input:focus { border-color: var(--blue-glow); box-shadow: 0 0 0 3px rgba(127, 15
   font-size: 17px; font-weight: 700; letter-spacing: 0.01em;
   border-radius: 16px; cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.95);
-  background: var(--flutes), rgba(255, 255, 255, 0.6);
+  background: #ffffff;
   box-shadow: 0 6px 16px -8px rgba(80, 90, 170, 0.4);
   transition: transform 0.08s, box-shadow 0.2s, opacity 0.2s;
 }
@@ -172,15 +172,15 @@ input:focus { border-color: var(--blue-glow); box-shadow: 0 0 0 3px rgba(127, 15
 .btn:disabled { opacity: 0.45; cursor: default; }
 .btn.primary {
   color: #fff; border-color: rgba(200, 215, 255, 0.9);
-  background: var(--flutes), linear-gradient(135deg, #7d98ff, #5b7cfa 60%, #6a6ef0);
+  background: #5b7cfa;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4) inset, 0 0 18px rgba(110, 140, 255, 0.55), 0 10px 22px -10px rgba(70, 90, 220, 0.7);
 }
 .btn.primary:disabled { box-shadow: none; filter: saturate(0.5); }
 .btn.big { padding: 17px; font-size: 18px; }
 .btn.small { width: auto; display: inline-block; padding: 9px 16px; font-size: 14px; margin-top: 10px; }
-.btn.ghost { background: rgba(255, 255, 255, 0.5); }
+.btn.ghost { background: #f4f5fd; }
 .btn.danger { color: var(--danger); }
-.btn.danger.confirm { color: #fff; background: linear-gradient(135deg, #f07a98, #e2577a); border-color: #f5b5c6; }
+.btn.danger.confirm { color: #fff; background: #e2577a; border-color: #f5b5c6; }
 .link-btn {
   display: block; margin: 12px auto 0; background: none; border: 0; cursor: pointer;
   color: var(--muted); font-size: 14px; text-decoration: underline; text-underline-offset: 3px;
@@ -202,13 +202,13 @@ input:focus { border-color: var(--blue-glow); box-shadow: 0 0 0 3px rgba(127, 15
 .seg button {
   padding: 10px 6px; border-radius: 14px; cursor: pointer;
   border: 1px solid rgba(255, 255, 255, 0.95);
-  background: var(--flutes), rgba(255, 255, 255, 0.45);
+  background: #ffffff;
   font-weight: 700; font-size: 16px; line-height: 1.2;
   transition: box-shadow 0.2s, background 0.2s;
 }
 .seg button small { display: block; font-weight: 500; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
 .seg button.selected {
-  background: var(--flutes), linear-gradient(135deg, rgba(190, 205, 255, 0.85), rgba(150, 175, 255, 0.7));
+  background: #c9d5ff;
   border-color: #fff;
   box-shadow: 0 0 0 2px rgba(127, 155, 255, 0.55), 0 0 16px rgba(127, 155, 255, 0.5);
 }
@@ -259,11 +259,11 @@ input:focus { border-color: var(--blue-glow); box-shadow: 0 0 0 3px rgba(127, 15
 .tile {
   position: relative; border-radius: var(--tile-radius);
   border: 1.5px solid rgba(255, 255, 255, 0.9);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35), inset 0 0 14px rgba(255, 255, 255, 0.55), 0 6px 14px -8px rgba(80, 90, 170, 0.35);
+  box-shadow: 0 6px 14px -8px rgba(80, 90, 170, 0.35);
 }
-.t-b { --tint: 125, 152, 255; background: var(--flutes), linear-gradient(160deg, rgba(200, 213, 255, 0.85), rgba(160, 182, 255, 0.6)); }
-.t-l { --tint: 205, 165, 240; background: var(--flutes), linear-gradient(160deg, rgba(246, 236, 252, 0.85), rgba(226, 205, 245, 0.62)); }
-.t-y { --tint: 242, 207, 106; background: var(--flutes), linear-gradient(160deg, rgba(253, 244, 214, 0.9), rgba(246, 224, 160, 0.65)); }
+.t-b { --tint: 125, 152, 255; background: #c3d0ff; }
+.t-l { --tint: 205, 165, 240; background: #eedff8; }
+.t-y { --tint: 242, 207, 106; background: #faebb8; }
 
 .cell { aspect-ratio: 1; min-width: 0; overflow: hidden; }
 .editor .cell textarea {
