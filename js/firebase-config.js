@@ -2,8 +2,7 @@
 export const firebaseConfig = {
   apiKey: "AIzaSyBvu7dhIAtkBgt2aQOcVFXLbU8H5ERnnoI",
   authDomain: "webringo-d72a0.firebaseapp.com",
-  // ⬇️ Replace with the address shown at the top of Firebase → Realtime Database → Data
-  databaseURL: "PASTE-YOUR-DATABASE-URL-HERE",
+  databaseURL: "https://webringo-d72a0-default-rtdb.europe-west1.firebasedatabase.app/",
   projectId: "webringo-d72a0",
   storageBucket: "webringo-d72a0.firebasestorage.app",
   messagingSenderId: "538379695232",
