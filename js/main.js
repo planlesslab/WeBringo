@@ -1,4 +1,3 @@
-import { firebaseConfig } from "./firebase-config.js";
 import { createLocalBackend } from "./backend-local.js";
 import { findDuplicates, winningCells, RULE_LABEL } from "./bingo.js";
 
@@ -861,9 +860,31 @@ async function boot() {
   const roomParam = cleanCode(params.get("room"));
   if (roomParam) { $("code-input").value = roomParam; setInviteMode(roomParam); }
 
-  const configured = firebaseConfig?.apiKey && !firebaseConfig.apiKey.startsWith("YOUR");
   const banner = $("mode-banner");
   setBusy(true);
+
+  // Load the config separately, so a mistake in it shows a clear message
+  // instead of a page where nothing works.
+  let firebaseConfig = null;
+  let configError = "";
+  try {
+    ({ firebaseConfig } = await import("./firebase-config.js"));
+    if (!firebaseConfig) configError = "js/firebase-config.js must start with: export const firebaseConfig = {  (the word export is missing).";
+  } catch (err) {
+    console.error(err);
+    configError = "js/firebase-config.js has a typo, so it can't be read. Compare it with the example in the README.";
+  }
+  const configured = firebaseConfig?.apiKey && !firebaseConfig.apiKey.startsWith("YOUR");
+  if (!configError && configured && !/^https:\/\//.test(firebaseConfig.databaseURL || "") && !params.has("local")) {
+    configError = "js/firebase-config.js is missing databaseURL. Copy it from Firebase → Realtime Database (the address at the top of the Data tab).";
+  }
+  if (configError) {
+    banner.hidden = false;
+    banner.classList.add("bad");
+    banner.textContent = "Setup problem: " + configError;
+    return;
+  }
+
   try {
     if (configured && !params.has("local")) {
       const { createFirebaseBackend } = await import("./backend-firebase.js");
