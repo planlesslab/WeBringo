@@ -25,8 +25,14 @@ const tint = (i, size) => {
 const pts = (n) => `${n} pt${n === 1 ? "" : "s"}`;
 
 function show(view) {
+  const prev = document.body.dataset.view;
   for (const v of VIEWS) $(`view-${v}`).hidden = v !== view;
   document.body.dataset.view = view;
+  // Moving between screens (into the lobby, the game, the results): bring the game into view below the page intro.
+  if (prev && prev !== view) {
+    const top = $("play").getBoundingClientRect().top;
+    if (Math.abs(top) > 4) $("play").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
 }
 
 // ---------- State ----------

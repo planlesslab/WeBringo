@@ -6,28 +6,68 @@
   <meta name="theme-color" content="#eceefa" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="description" content="WeBringo: conversation bingo for friends and parties. Fill your card with topics, listen out for them, and score every time one comes up." />
-  <title>WeBringo · conversation bingo</title>
+  <title>WeBringo – Planless Lab</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3E%3Crect x='1' y='1' width='8' height='8' rx='2' fill='%235b7cfa'/%3E%3Crect x='11' y='1' width='8' height='8' rx='2' fill='%23d6b4f0'/%3E%3Crect x='21' y='1' width='8' height='8' rx='2' fill='%23f3d57e'/%3E%3Crect x='1' y='11' width='8' height='8' rx='2' fill='%23d6b4f0'/%3E%3Crect x='11' y='11' width='8' height='8' rx='2' fill='%235b7cfa'/%3E%3Crect x='21' y='11' width='8' height='8' rx='2' fill='%23d6b4f0'/%3E%3Crect x='1' y='21' width='8' height='8' rx='2' fill='%23f3d57e'/%3E%3Crect x='11' y='21' width='8' height='8' rx='2' fill='%23d6b4f0'/%3E%3Crect x='21' y='21' width='8' height='8' rx='2' fill='%235b7cfa'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Figtree:wght@400;500;600&display=swap" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <!-- Scenery: pastel orbs, neon light tube, glass speech bubbles (decorative) -->
-  <div class="scene" aria-hidden="true">
-    <div class="orb orb-blue"></div>
-    <div class="orb orb-pink"></div>
-    <div class="slab"></div>
-    <div class="neon neon-top"></div>
-    <div class="neon neon-bottom"></div>
-    <div class="bubble bubble-r"></div>
-    <div class="bubble bubble-l"></div>
-    <div class="floor"></div>
-  </div>
 
-  <div id="mode-banner" class="banner" hidden></div>
+  <!-- Planless Lab site navigation -->
+  <nav class="pl-nav" aria-label="Main"><div class="pl-in">
+    <a class="pl-brand" href="https://planlesslab.github.io/">Planless Lab</a>
+    <ul>
+      <li><a href="./" aria-current="page">WeBringo</a></li>
+      <li><a href="https://planlesslab.github.io/#chaoticparty">ChaoticParty</a></li>
+      <li><a href="https://planlesslab.github.io/Bauble-Shake/">Bauble-Shake</a></li>
+    </ul>
+  </div></nav>
+  <script>
+    // On narrow screens, scroll the nav so the current page's link is visible.
+    (function () {
+      var cur = document.querySelector('.pl-nav a[aria-current="page"]');
+      var ul = cur && cur.closest("ul");
+      if (ul && ul.scrollWidth > ul.clientWidth) ul.scrollLeft = cur.parentNode.offsetLeft - ul.offsetLeft - 8;
+    })();
+  </script>
 
+  <!-- Standard Planless Lab project intro -->
+  <header class="pl-head" id="pl-head">
+    <a class="pl-back" href="https://planlesslab.github.io/">← All projects</a>
+    <div class="pl-tags"><span class="pl-tag">Group party</span></div>
+    <h1>WeBringo</h1>
+    <p class="pl-sub">Turn everyday conversations into a game.</p>
+    <div class="pl-cols">
+      <div class="pl-desc">
+        <p>WeBringo is a conversation bingo game for friends, parties and social gatherings. Fill your bingo card with topics, then listen out for them as the conversation unfolds. Score points whenever a topic comes up — even repeated mentions count!</p>
+        <p>A playful icebreaker that gets people talking, listening and laughing together.</p>
+      </div>
+      <dl class="pl-facts">
+        <div><dt>Category</dt><dd>Icebreaker Games, Party Games</dd></div>
+        <div><dt>Players</dt><dd>2–8</dd></div>
+        <div><dt>Play format</dt><dd>Virtual, In-person, Hybrid</dd></div>
+        <div><dt>Device</dt><dd>Mobile / Web</dd></div>
+        <div><dt>Occasions</dt><dd>Friends, Parties, Social Gatherings, Meetups</dd></div>
+        <div><dt>Game type</dt><dd>Conversation / Bingo</dd></div>
+      </dl>
+    </div>
+  </header>
+
+  <section class="pl-game" id="play" aria-label="Play WeBringo">
+    <!-- Game scenery: pastel orbs, neon light tube, glass speech bubbles (decorative) -->
+    <div class="scene" aria-hidden="true">
+      <div class="orb orb-blue"></div>
+      <div class="orb orb-pink"></div>
+      <div class="slab"></div>
+      <div class="neon neon-top"></div>
+      <div class="neon neon-bottom"></div>
+      <div class="bubble bubble-r"></div>
+      <div class="bubble bubble-l"></div>
+      <div class="floor"></div>
+    </div>
+    <div id="mode-banner" class="banner" hidden></div>
   <main id="app">
     <!-- HOME -->
     <section id="view-home" class="view">
@@ -37,8 +77,6 @@
           <i class="t l"></i><i class="t b"></i><i class="t l"></i>
           <i class="t y"></i><i class="t l"></i><i class="t b"></i>
         </div>
-        <h1 class="logo">We<span>Bringo</span></h1>
-        <p class="tagline">Conversation bingo. Fill your card, listen out, and score every time a topic comes up.</p>
       </header>
 
       <div class="card glass">
@@ -173,6 +211,12 @@
       </div>
     </section>
   </main>
+  </section>
+
+  <footer class="pl-foot">
+    <p class="pl-suggest">Got an idea for a real-world experience? <a href="https://planlesslab.github.io/">Suggest an experience</a></p>
+    <p>Planless Lab · IRL Experience Lab</p>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js" defer></script>
   <script type="module" src="js/main.js"></script>
